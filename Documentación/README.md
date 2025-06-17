@@ -1,5 +1,7 @@
-Nombre del proyecto: VecirrUN
-Nombre del grupo: Formula 1
+Nombre del proyecto: VecirrUN.
+
+Nombre del grupo: Formula 1.
+
 - Andres Felipe Arias Gonzalez - anariasg@unal.edu.co
 - Juliana Alejandra Nieto Cárdenas - junietoc@unal.edu.co
 - Misael Jesús Florez Anave - mifloreza@unal.edu.co
