@@ -1,0 +1,15 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# SQLite database
+*.db
+
+# Environment variables
+.env
+
+# Virtual environment
+venv/
+
+# OS files
+.DS_Store 
