@@ -1,4 +1,4 @@
-# Sistema de Préstamo de Bicicletas
+# VeciRun
 
 Aplicación de escritorio minimal-viable para el sistema de préstamo de bicicletas universitario.
 
@@ -22,7 +22,7 @@ Aplicación monolítica con las siguientes capas:
 ### 1. Crear Usuario
 - Registro de usuarios (estudiantes, docentes, administrativos)
 - Roles: usuario, operador, admin
-- Validación de cédula y carnet únicos
+- Validación de cédula única (carnet se genera automáticamente)
 
 ### 2. Registrar Préstamo
 - Check-out de bicicletas
@@ -47,7 +47,7 @@ Aplicación monolítica con las siguientes capas:
 1. **Clonar el repositorio**
    ```bash
    git clone <repository-url>
-   cd bike-loan-system
+   cd vecirun
    ```
 
 2. **Crear entorno virtual**
@@ -65,16 +65,16 @@ Aplicación monolítica con las siguientes capas:
    
    Crear base de datos PostgreSQL:
    ```sql
-   CREATE DATABASE bike_loan_db;
+   CREATE DATABASE vecirun_db;
    CREATE USER postgres WITH PASSWORD 'password';
-   GRANT ALL PRIVILEGES ON DATABASE bike_loan_db TO postgres;
+   GRANT ALL PRIVILEGES ON DATABASE vecirun_db TO postgres;
    ```
 
 5. **Configurar variables de entorno**
    
    Crear archivo `.env` en la raíz del proyecto:
    ```
-   DATABASE_URL=postgresql://postgres:password@localhost:5432/bike_loan_db
+   DATABASE_URL=postgresql://postgres:password@localhost:5432/vecirun_db
    ```
 
 6. **Ejecutar migraciones**
@@ -90,7 +90,7 @@ Aplicación monolítica con las siguientes capas:
 ## Estructura del Proyecto
 
 ```
-bike-loan-system/
+vecirun/
 ├── main.py              # Aplicación principal Flet
 ├── models.py            # Modelos SQLAlchemy
 ├── services.py          # Lógica de negocio
@@ -121,43 +121,66 @@ bike-loan-system/
 
 ## Uso de la Aplicación
 
-### 1. Crear Usuario
+### 0. Pantalla de Inicio
+1. Al abrir la aplicación, se muestra la pantalla de inicio
+2. Seleccionar rol: "Usuario Regular" o "Administrador"
+3. Si se selecciona "Administrador", elegir estación asignada
+4. Hacer clic en "Continuar" para confirmar la selección
+5. La navegación se actualiza según el rol seleccionado
+
+### 1. Crear Usuario (Solo Administradores)
 1. Seleccionar "Crear Usuario" en el menú lateral
 2. Completar todos los campos obligatorios
 3. Seleccionar afiliación y rol
 4. Hacer clic en "Crear Usuario"
 
-### 2. Registrar Préstamo
+### 2. Registrar Préstamo (Solo Administradores)
 1. Seleccionar "Registrar Préstamo" en el menú lateral
 2. Ingresar cédula del usuario
-3. Ingresar código de bicicleta
+3. Seleccionar bicicleta disponible de la lista
 4. Ingresar código de estación de salida
 5. Hacer clic en "Registrar Préstamo"
 
-### 3. Registrar Devolución
+### 3. Registrar Devolución (Solo Administradores)
 1. Seleccionar "Registrar Devolución" en el menú lateral
-2. Ingresar ID del préstamo
+2. Ingresar cédula del usuario
 3. Ingresar código de estación de devolución
 4. Hacer clic en "Registrar Devolución"
+
+### 4. Consultar Disponibilidad (Solo Usuarios Regulares)
+1. Seleccionar "Disponibilidad" en el menú lateral
+2. Ver la cantidad de bicicletas disponibles por estación
+3. Usar el botón "Actualizar" para refrescar la información
 
 ## Datos de Prueba
 
 La aplicación incluye datos de muestra automáticamente:
 
 ### Estaciones
-- EST001: Estación Central
-- EST002: Estación Norte
-- EST003: Estación Sur
+- EST001: Calle 26
+- EST002: Salida al Uriel Gutiérrez
+- EST003: Calle 53
+- EST004: Calle 45
+- EST005: Edificio Ciencia y Tecnología
 
 ### Bicicletas
 - B001: BIKE001 (disponible)
 - B002: BIKE002 (disponible)
 - B003: BIKE003 (disponible)
 
-### Usuario Administrador
+### Usuarios del Sistema
+
+#### Usuario Administrador
 - Cédula: 12345678
-- Carnet: ADMIN001
+- Carnet: USER_12345678 (generado automáticamente)
 - Email: admin@universidad.edu
+
+#### Usuarios Operadores (uno por estación)
+- **Operador Calle 26**: Cédula 11111111, Email: operador1@universidad.edu
+- **Operador Uriel Gutiérrez**: Cédula 22222222, Email: operador2@universidad.edu
+- **Operador Calle 53**: Cédula 33333333, Email: operador3@universidad.edu
+- **Operador Calle 45**: Cédula 44444444, Email: operador4@universidad.edu
+- **Operador Ciencia y Tecnología**: Cédula 55555555, Email: operador5@universidad.edu
 
 ## Comandos Útiles
 

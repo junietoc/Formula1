@@ -10,7 +10,7 @@ def view_database():
     """Ver el contenido de la base de datos"""
     try:
         # Conectar a la base de datos
-        conn = sqlite3.connect('bike_loan.db')
+        conn = sqlite3.connect('vecirun.db')
         cursor = conn.cursor()
         
         print("🗄️  CONTENIDO DE LA BASE DE DATOS")
@@ -56,7 +56,7 @@ def view_database():
 def view_specific_table(table_name):
     """Ver una tabla específica"""
     try:
-        conn = sqlite3.connect('bike_loan.db')
+        conn = sqlite3.connect('vecirun.db')
         cursor = conn.cursor()
         
         print(f"📊 TABLA: {table_name.upper()}")

@@ -8,6 +8,10 @@ class UserService:
     def create_user(db: Session, cedula: str, carnet: str, full_name: str, email: str, 
                    affiliation: UserAffiliationEnum, role: UserRoleEnum = UserRoleEnum.usuario) -> User:
         """Create a new user (user or operator with admin privileges)"""
+        # Generate a unique carnet if empty
+        if not carnet or carnet.strip() == "":
+            carnet = f"USER_{cedula}"
+        
         user = User(
             cedula=cedula,
             carnet=carnet,
@@ -118,4 +122,12 @@ class LoanService:
     @staticmethod
     def get_loan_by_id(db: Session, loan_id: uuid.UUID) -> Loan:
         """Get loan by ID"""
-        return db.query(Loan).filter(Loan.id == loan_id).first() 
+        return db.query(Loan).filter(Loan.id == loan_id).first()
+    
+    @staticmethod
+    def get_open_loans_by_user_cedula(db: Session, cedula: str) -> list[Loan]:
+        """Get all open loans for a user by cedula"""
+        return db.query(Loan).join(User).filter(
+            User.cedula == cedula,
+            Loan.status == LoanStatusEnum.abierto
+        ).all() 
