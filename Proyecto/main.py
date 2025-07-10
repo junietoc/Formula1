@@ -699,10 +699,16 @@ class VeciRunApp:
             width=300
         )
         
-        station_code_field = ft.TextField(
-            label="Código de Estación",
-            hint_text="Ingrese el código de la estación",
-            width=300
+        station_dropdown = ft.Dropdown(
+            label="Estación de Préstamo",
+            width=300,
+            options=[
+                ft.dropdown.Option("EST001", "EST001 - Calle 26"),
+                ft.dropdown.Option("EST002", "EST002 - Salida al Uriel Gutiérrez"),
+                ft.dropdown.Option("EST003", "EST003 - Calle 53"),
+                ft.dropdown.Option("EST004", "EST004 - Calle 45"),
+                ft.dropdown.Option("EST005", "EST005 - Edificio Ciencia y Tecnología"),
+            ]
         )
         
         # Get available bicycles
@@ -721,7 +727,7 @@ class VeciRunApp:
         def register_loan(e):
             try:
                 # Validate required fields
-                if not all([user_cedula_field.value, bike_radio_group.value, station_code_field.value]):
+                if not all([user_cedula_field.value, bike_radio_group.value, station_dropdown.value]):
                     result_text.value = "Todos los campos son obligatorios"
                     result_text.color = ft.colors.RED
                     page.update()
@@ -744,7 +750,7 @@ class VeciRunApp:
                     return
                 
                 # Get station
-                station = StationService.get_station_by_code(self.db, station_code_field.value)
+                station = StationService.get_station_by_code(self.db, station_dropdown.value)
                 if not station:
                     result_text.value = "Estación no encontrada"
                     result_text.color = ft.colors.RED
@@ -765,7 +771,7 @@ class VeciRunApp:
                 # Clear fields
                 user_cedula_field.value = ""
                 bike_radio_group.value = None
-                station_code_field.value = ""
+                station_dropdown.value = None
                 
                 # Refresh available bikes
                 self.refresh_loan_view(page)
@@ -793,7 +799,7 @@ class VeciRunApp:
             ft.Text("Bicicletas Disponibles:", size=16, weight=ft.FontWeight.BOLD),
             bike_radio_group,
             ft.Container(height=10),
-            station_code_field,
+            station_dropdown,
             ft.Container(height=20),
             loan_button,
             ft.Container(height=20),
@@ -811,10 +817,16 @@ class VeciRunApp:
             width=300
         )
         
-        station_code_field = ft.TextField(
-            label="Código de Estación de Devolución",
-            hint_text="Ingrese el código de la estación",
-            width=300
+        station_dropdown = ft.Dropdown(
+            label="Estación de Devolución",
+            width=300,
+            options=[
+                ft.dropdown.Option("EST001", "EST001 - Calle 26"),
+                ft.dropdown.Option("EST002", "EST002 - Salida al Uriel Gutiérrez"),
+                ft.dropdown.Option("EST003", "EST003 - Calle 53"),
+                ft.dropdown.Option("EST004", "EST004 - Calle 45"),
+                ft.dropdown.Option("EST005", "EST005 - Edificio Ciencia y Tecnología"),
+            ]
         )
         
         result_text = ft.Text("", color=ft.colors.GREEN)
@@ -822,7 +834,7 @@ class VeciRunApp:
         def register_return(e):
             try:
                 # Validate required fields
-                if not all([user_cedula_field.value, station_code_field.value]):
+                if not all([user_cedula_field.value, station_dropdown.value]):
                     result_text.value = "Todos los campos son obligatorios"
                     result_text.color = ft.colors.RED
                     page.update()
@@ -840,7 +852,7 @@ class VeciRunApp:
                 loan = open_loans[0]  # Get the first (most recent) open loan
                 
                 # Get station
-                station = StationService.get_station_by_code(self.db, station_code_field.value)
+                station = StationService.get_station_by_code(self.db, station_dropdown.value)
                 if not station:
                     result_text.value = "Estación no encontrada"
                     result_text.color = ft.colors.RED
@@ -859,7 +871,7 @@ class VeciRunApp:
                 
                 # Clear fields
                 user_cedula_field.value = ""
-                station_code_field.value = ""
+                station_dropdown.value = None
                 
                 page.update()
                 
@@ -881,7 +893,7 @@ class VeciRunApp:
             ft.Text("Registrar Devolución de Bicicleta", size=24, weight=ft.FontWeight.BOLD),
             ft.Divider(),
             user_cedula_field,
-            station_code_field,
+            station_dropdown,
             ft.Container(height=20),
             return_button,
             ft.Container(height=20),
