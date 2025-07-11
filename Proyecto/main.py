@@ -196,7 +196,7 @@ class VeciRunApp:
             create_button,
             ft.Container(height=20),
             result_text
-        ])
+        ], scroll=ft.ScrollMode.AUTO)
         page.update()
     
     def show_home_view(self):
@@ -602,7 +602,7 @@ class VeciRunApp:
             ]),
             ft.Container(height=20),
             dashboard_content
-        ])
+        ], scroll=ft.ScrollMode.AUTO)
         page.update()
     
     def update_navigation_for_role(self, role):
@@ -661,9 +661,10 @@ class VeciRunApp:
         availability_cards = []
         
         for station in stations:
-            # Count bikes at this station (simplified - in real app you'd track bike locations)
-            # For now, we'll show total available bikes
-            bike_count = len(available_bikes)
+            # Count available bikes assigned to this station
+            bike_count = sum(
+                1 for bike in available_bikes if bike.current_station_id == station.id
+            )
             
             card = ft.Card(
                 content=ft.Container(
@@ -733,7 +734,7 @@ class VeciRunApp:
                 run_spacing=20,
                 controls=availability_cards
             )
-        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, scroll=ft.ScrollMode.AUTO)
         page.update()
     
     def show_loan_view(self):
@@ -897,7 +898,7 @@ class VeciRunApp:
             loan_button,
             ft.Container(height=20),
             result_text
-        ])
+        ], scroll=ft.ScrollMode.AUTO)
         page.update()
     
     def show_return_view(self):
@@ -991,7 +992,7 @@ class VeciRunApp:
             return_button,
             ft.Container(height=20),
             result_text
-        ])
+        ], scroll=ft.ScrollMode.AUTO)
         page.update()
     
     def create_sample_data(self):
