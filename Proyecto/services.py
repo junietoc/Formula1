@@ -67,13 +67,14 @@ class StationService:
 class LoanService:
     @staticmethod
     def create_loan(db: Session, user_id: uuid.UUID, bike_id: uuid.UUID, 
-                   station_out_id: uuid.UUID) -> Loan:
+                   station_out_id: uuid.UUID, station_in_id: uuid.UUID | None = None) -> Loan:
         """Register a loan (bike check-out)"""
         # Create the loan
         loan = Loan(
             user_id=user_id,
             bike_id=bike_id,
             station_out_id=station_out_id,
+            station_in_id=station_in_id,
             status=LoanStatusEnum.abierto
         )
         db.add(loan)

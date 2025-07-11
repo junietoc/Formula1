@@ -699,17 +699,45 @@ class VeciRunApp:
             width=300
         )
         
-        station_dropdown = ft.Dropdown(
-            label="Estación de Préstamo",
+        # Station dropdown options shared by both dropdowns
+        station_options = [
+            ft.dropdown.Option("EST001", "EST001 - Calle 26"),
+            ft.dropdown.Option("EST002", "EST002 - Salida al Uriel Gutiérrez"),
+            ft.dropdown.Option("EST003", "EST003 - Calle 53"),
+            ft.dropdown.Option("EST004", "EST004 - Calle 45"),
+            ft.dropdown.Option("EST005", "EST005 - Edificio Ciencia y Tecnología"),
+        ]
+        
+        # Dropdown for departure station
+        station_out_dropdown = ft.Dropdown(
+            label="Estación de Salida",
             width=300,
-            options=[
-                ft.dropdown.Option("EST001", "EST001 - Calle 26"),
-                ft.dropdown.Option("EST002", "EST002 - Salida al Uriel Gutiérrez"),
-                ft.dropdown.Option("EST003", "EST003 - Calle 53"),
-                ft.dropdown.Option("EST004", "EST004 - Calle 45"),
-                ft.dropdown.Option("EST005", "EST005 - Edificio Ciencia y Tecnología"),
-            ]
+            options=station_options
         )
+
+        # Dropdown for arrival station
+        station_in_dropdown = ft.Dropdown(
+            label="Estación de Llegada",
+            width=300,
+            options=station_options,
+            disabled=True
+        )
+
+        # Update arrival station options when departure is selected
+        def update_station_in(e):
+            selected_out = station_out_dropdown.value
+            if not selected_out:
+                station_in_dropdown.disabled = True
+                station_in_dropdown.options = station_options
+            else:
+                station_in_dropdown.disabled = False
+                station_in_dropdown.options = [opt for opt in station_options if opt.key != selected_out]
+                # Reset previous selection if now invalid
+                if station_in_dropdown.value == selected_out:
+                    station_in_dropdown.value = None
+            page.update()
+
+        station_out_dropdown.on_change = update_station_in
         
         # Get available bicycles
         available_bikes = BicycleService.get_available_bicycles(self.db)
@@ -727,8 +755,20 @@ class VeciRunApp:
         def register_loan(e):
             try:
                 # Validate required fields
-                if not all([user_cedula_field.value, bike_radio_group.value, station_dropdown.value]):
+                if not all([
+                    user_cedula_field.value,
+                    bike_radio_group.value,
+                    station_out_dropdown.value,
+                    station_in_dropdown.value
+                ]):
                     result_text.value = "Todos los campos son obligatorios"
+                    result_text.color = ft.colors.RED
+                    page.update()
+                    return
+
+                # Ensure stations are different
+                if station_out_dropdown.value == station_in_dropdown.value:
+                    result_text.value = "La estación de llegada debe ser diferente a la de salida"
                     result_text.color = ft.colors.RED
                     page.update()
                     return
@@ -749,9 +789,10 @@ class VeciRunApp:
                     page.update()
                     return
                 
-                # Get station
-                station = StationService.get_station_by_code(self.db, station_dropdown.value)
-                if not station:
+                # Get stations
+                station_out = StationService.get_station_by_code(self.db, station_out_dropdown.value)
+                station_in = StationService.get_station_by_code(self.db, station_in_dropdown.value)
+                if not station_out or not station_in:
                     result_text.value = "Estación no encontrada"
                     result_text.color = ft.colors.RED
                     page.update()
@@ -762,7 +803,8 @@ class VeciRunApp:
                     self.db,
                     user_id=user.id,
                     bike_id=bicycle.id,
-                    station_out_id=station.id
+                    station_out_id=station_out.id,
+                    station_in_id=station_in.id
                 )
                 
                 result_text.value = f"Préstamo registrado exitosamente. ID: {loan.id}"
@@ -771,7 +813,9 @@ class VeciRunApp:
                 # Clear fields
                 user_cedula_field.value = ""
                 bike_radio_group.value = None
-                station_dropdown.value = None
+                station_out_dropdown.value = None
+                station_in_dropdown.value = None
+                station_in_dropdown.disabled = True
                 
                 # Refresh available bikes
                 self.refresh_loan_view(page)
@@ -799,7 +843,8 @@ class VeciRunApp:
             ft.Text("Bicicletas Disponibles:", size=16, weight=ft.FontWeight.BOLD),
             bike_radio_group,
             ft.Container(height=10),
-            station_dropdown,
+            station_out_dropdown,
+            station_in_dropdown,
             ft.Container(height=20),
             loan_button,
             ft.Container(height=20),
