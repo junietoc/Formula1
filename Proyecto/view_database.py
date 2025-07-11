@@ -5,12 +5,13 @@ Script para ver el contenido de la base de datos
 
 import sqlite3
 from tabulate import tabulate
+from config import DB_FILENAME
 
 def view_database():
     """Ver el contenido de la base de datos"""
     try:
         # Conectar a la base de datos
-        conn = sqlite3.connect('vecirun.db')
+        conn = sqlite3.connect(str(DB_FILENAME))
         cursor = conn.cursor()
         
         print("🗄️  CONTENIDO DE LA BASE DE DATOS")
@@ -56,7 +57,7 @@ def view_database():
 def view_specific_table(table_name):
     """Ver una tabla específica"""
     try:
-        conn = sqlite3.connect('vecirun.db')
+        conn = sqlite3.connect(str(DB_FILENAME))
         cursor = conn.cursor()
         
         print(f"📊 TABLA: {table_name.upper()}")

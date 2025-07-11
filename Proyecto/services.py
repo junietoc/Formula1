@@ -128,7 +128,7 @@ class LoanService:
     @staticmethod
     def get_open_loans_by_user_cedula(db: Session, cedula: str) -> list[Loan]:
         """Get all open loans for a user by cedula"""
-        return db.query(Loan).join(User).filter(
+        return db.query(Loan).join(User, Loan.user_id == User.id).filter(
             User.cedula == cedula,
             Loan.status == LoanStatusEnum.abierto
         ).all() 

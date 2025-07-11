@@ -5,12 +5,13 @@ Script para crear las estaciones con los nombres correctos en español
 
 import sqlite3
 import uuid
+from config import DB_FILENAME
 
 def create_stations():
     """Crear las estaciones con los nombres correctos"""
     try:
         # Conectar a la base de datos
-        conn = sqlite3.connect('vecirun.db')
+        conn = sqlite3.connect(str(DB_FILENAME))
         cursor = conn.cursor()
         
         print("🔄 Creando estaciones...")
