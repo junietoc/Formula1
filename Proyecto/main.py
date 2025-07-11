@@ -817,25 +817,13 @@ class VeciRunApp:
             width=300
         )
         
-        station_dropdown = ft.Dropdown(
-            label="Estación de Devolución",
-            width=300,
-            options=[
-                ft.dropdown.Option("EST001", "EST001 - Calle 26"),
-                ft.dropdown.Option("EST002", "EST002 - Salida al Uriel Gutiérrez"),
-                ft.dropdown.Option("EST003", "EST003 - Calle 53"),
-                ft.dropdown.Option("EST004", "EST004 - Calle 45"),
-                ft.dropdown.Option("EST005", "EST005 - Edificio Ciencia y Tecnología"),
-            ]
-        )
-        
         result_text = ft.Text("", color=ft.colors.GREEN)
         
         def register_return(e):
             try:
                 # Validate required fields
-                if not all([user_cedula_field.value, station_dropdown.value]):
-                    result_text.value = "Todos los campos son obligatorios"
+                if not user_cedula_field.value:
+                    result_text.value = "La cédula del usuario es obligatoria"
                     result_text.color = ft.colors.RED
                     page.update()
                     return
@@ -851,19 +839,11 @@ class VeciRunApp:
                 # If multiple loans, use the most recent one
                 loan = open_loans[0]  # Get the first (most recent) open loan
                 
-                # Get station
-                station = StationService.get_station_by_code(self.db, station_dropdown.value)
-                if not station:
-                    result_text.value = "Estación no encontrada"
-                    result_text.color = ft.colors.RED
-                    page.update()
-                    return
-                
-                # Return loan
+                # Return loan (the system will use the station information already stored)
                 returned_loan = LoanService.return_loan(
                     self.db,
                     loan_id=loan.id,
-                    station_in_id=station.id
+                    station_in_id=None  # Let the service handle station assignment
                 )
                 
                 result_text.value = f"Devolución registrada exitosamente. Préstamo cerrado."
@@ -871,7 +851,6 @@ class VeciRunApp:
                 
                 # Clear fields
                 user_cedula_field.value = ""
-                station_dropdown.value = None
                 
                 page.update()
                 
@@ -893,7 +872,6 @@ class VeciRunApp:
             ft.Text("Registrar Devolución de Bicicleta", size=24, weight=ft.FontWeight.BOLD),
             ft.Divider(),
             user_cedula_field,
-            station_dropdown,
             ft.Container(height=20),
             return_button,
             ft.Container(height=20),
