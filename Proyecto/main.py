@@ -764,6 +764,18 @@ class VeciRunApp:
             options=station_options
         )
 
+        # Cache admin station code if logged as admin/operator
+        admin_station_code = (
+            self.current_user_station
+            if getattr(self, "current_user_role", None) == "admin" and getattr(self, "current_user_station", None)
+            else None
+        )
+
+        # If admin/operator, lock departure station now (arrival handled later once defined)
+        if admin_station_code:
+            station_out_dropdown.value = admin_station_code
+            station_out_dropdown.disabled = True
+
         # Dropdown for arrival station
         station_in_dropdown = ft.Dropdown(
             label="Estación de Llegada",
@@ -771,6 +783,11 @@ class VeciRunApp:
             options=station_options,
             disabled=True
         )
+
+        # If admin/operator, enable arrival dropdown and filter options after it's defined
+        if admin_station_code:
+            station_in_dropdown.disabled = False
+            station_in_dropdown.options = [opt for opt in station_options if opt.key != admin_station_code]
 
         # Update arrival station options when departure is selected
         def update_station_in(e):
@@ -788,15 +805,58 @@ class VeciRunApp:
 
         station_out_dropdown.on_change = update_station_in
         
-        # Get available bicycles
+        # Get available bicycles (filter by admin's current station if applicable)
         available_bikes = BicycleService.get_available_bicycles(self.db)
+        if getattr(self, 'current_user_role', None) == "admin" and getattr(self, 'current_user_station', None):
+            station_obj = StationService.get_station_by_code(self.db, self.current_user_station)
+            if station_obj:
+                available_bikes = [bike for bike in available_bikes if bike.current_station_id == station_obj.id]
         
-        # Create radio buttons for available bikes
-        bike_radio_group = ft.RadioGroup(
-            content=ft.Column([
-                ft.Radio(value=bike.bike_code, label=f"{bike.bike_code} - {bike.serial_number}")
-                for bike in available_bikes
-            ])
+        # ---------- Bike selection cards ----------
+        selected_bike_code: str | None = None  # var to store selected bike code
+
+        bike_cards: list[ft.Card] = []
+
+        def select_bike(e):
+            nonlocal selected_bike_code, bike_cards, page
+            selected_bike_code = e.control.data  # bike code stored in container
+            # Highlight selected card by elevating and adding border
+            for card in bike_cards:
+                is_selected = card.data == selected_bike_code
+                card.elevation = 8 if is_selected else 2
+                # adjust border in inner container
+                container = card.content
+                container.border = ft.border.all(color=ft.colors.BLUE, width=2) if is_selected else None
+            page.update()
+
+        for bike in available_bikes:
+            inner_container = ft.Container(
+                data=bike.bike_code,
+                on_click=select_bike,
+                content=ft.Column([
+                    ft.Icon(ft.icons.DIRECTIONS_BIKE, size=32, color=ft.colors.BLUE),
+                    ft.Text(bike.bike_code, weight=ft.FontWeight.BOLD)
+                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                padding=10,
+                alignment=ft.alignment.center,
+            )
+
+            card = ft.Card(
+                data=bike.bike_code,
+                elevation=2,
+                content=inner_container,
+                width=120,
+                height=120,
+            )
+            bike_cards.append(card)
+
+        bikes_container = ft.GridView(
+            runs_count=3,
+            max_extent=150,
+            child_aspect_ratio=1.0,
+            spacing=10,
+            run_spacing=10,
+            controls=bike_cards
         )
         
         result_text = ft.Text("", color=ft.colors.GREEN)
@@ -806,7 +866,7 @@ class VeciRunApp:
                 # Validate required fields
                 if not all([
                     user_cedula_field.value,
-                    bike_radio_group.value,
+                    selected_bike_code,
                     station_out_dropdown.value,
                     station_in_dropdown.value
                 ]):
@@ -831,7 +891,7 @@ class VeciRunApp:
                     return
                 
                 # Get bicycle
-                bicycle = BicycleService.get_bicycle_by_code(self.db, bike_radio_group.value)
+                bicycle = BicycleService.get_bicycle_by_code(self.db, selected_bike_code)
                 if not bicycle:
                     result_text.value = "Bicicleta no encontrada"
                     result_text.color = ft.colors.RED
@@ -861,10 +921,11 @@ class VeciRunApp:
                 
                 # Clear fields
                 user_cedula_field.value = ""
-                bike_radio_group.value = None
-                station_out_dropdown.value = None
-                station_in_dropdown.value = None
-                station_in_dropdown.disabled = True
+                selected_bike_code = None
+                # reset card elevations
+                for card in bike_cards:
+                    card.elevation = 2
+                    card.content.border = None
                 
                 # Refresh available bikes
                 self.refresh_loan_view(page)
@@ -890,7 +951,7 @@ class VeciRunApp:
             ft.Divider(),
             user_cedula_field,
             ft.Text("Bicicletas Disponibles:", size=16, weight=ft.FontWeight.BOLD),
-            bike_radio_group,
+            bikes_container,
             ft.Container(height=10),
             station_out_dropdown,
             station_in_dropdown,
