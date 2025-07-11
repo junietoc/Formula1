@@ -251,6 +251,14 @@ class VeciRunApp:
                 visible=False
             )
             
+            # Create cedula field for regular users
+            cedula_field = ft.TextField(
+                label="Cédula",
+                hint_text="Ingrese su cédula",
+                width=350,
+                visible=True  # visible by default for regular users
+            )
+            
             # Create sign in button
             sign_in_button = ft.ElevatedButton(
                 "Iniciar Sesión",
@@ -266,10 +274,11 @@ class VeciRunApp:
             # Create status text
             status_text = ft.Text("", visible=False)
             
-            return role_dropdown, station_container, station_dropdown, sign_in_button, status_text
+            # Return controls (added cedula_field)
+            return role_dropdown, station_container, station_dropdown, cedula_field, sign_in_button, status_text
         
-        # Create controls and get references
-        role_dropdown, station_container, station_dropdown, sign_in_button, status_text = create_controls()
+        # Create controls and get references (added cedula_field)
+        role_dropdown, station_container, station_dropdown, cedula_field, sign_in_button, status_text = create_controls()
         
         # Create a beautiful sign-in card
         sign_in_card = ft.Card(
@@ -304,6 +313,12 @@ class VeciRunApp:
                         padding=ft.padding.only(bottom=20)
                     ),
                     
+                    # NEW: Cedula input for regular users
+                    ft.Container(
+                        content=cedula_field,
+                        padding=ft.padding.only(bottom=20)
+                    ),
+                    
                     # Station selection (only for admin)
                     station_container,
                     
@@ -330,21 +345,44 @@ class VeciRunApp:
             if role_dropdown.value == "admin":
                 station_container.visible = True
                 station_dropdown.visible = True
+                # Hide cedula input for admin
+                cedula_field.visible = False
             else:
                 station_container.visible = False
                 station_dropdown.visible = False
                 station_dropdown.value = None
+                # Show cedula input for regular users
+                cedula_field.visible = True
             page.update()
         
         role_dropdown.on_change = on_role_change
         
         def sign_in_click(e):
+            # Validation for admin role remains the same
             if role_dropdown.value == "admin" and not station_dropdown.value:
                 status_text.value = "Por favor seleccione una estación para administradores"
                 status_text.color = ft.colors.RED
                 status_text.visible = True
                 page.update()
                 return
+            
+            # NEW: Validation for regular user login using cedula
+            if role_dropdown.value == "regular":
+                if not cedula_field.value:
+                    status_text.value = "Por favor ingrese su cédula"
+                    status_text.color = ft.colors.RED
+                    status_text.visible = True
+                    page.update()
+                    return
+                user = UserService.get_user_by_cedula(self.db, cedula_field.value)
+                if not user or user.role != UserRoleEnum.usuario:
+                    status_text.value = "Usuario no encontrado o rol inválido"
+                    status_text.color = ft.colors.RED
+                    status_text.visible = True
+                    page.update()
+                    return
+                # Store current user object for later use
+                self.current_user = user
             
             # Store selected role and station in app state
             self.current_user_role = role_dropdown.value
@@ -365,6 +403,9 @@ class VeciRunApp:
             # Switch to dashboard after a brief delay
             page.window_to_front()
             self.show_dashboard_view()
+            
+            # Clear cedula field after successful navigation
+            cedula_field.value = ""
         
         sign_in_button.on_click = sign_in_click
         
@@ -410,9 +451,16 @@ class VeciRunApp:
         print(f"Dashboard view - Role: {role}, Station: {station}")
         
         # Create welcome message
-        role_name = "Administrador" if role == "admin" else "Usuario Regular"
+        # Determine personalized greeting
+        if getattr(self, 'current_user', None):
+            user_name = self.current_user.full_name
+            welcome_message = f"¡Bienvenido, {user_name}!"
+        else:
+            role_name = "Administrador" if role == "admin" else "Usuario Regular"
+            welcome_message = f"¡Bienvenido, {role_name}!"
+
         welcome_text = ft.Text(
-            f"¡Bienvenido, {role_name}!",
+            welcome_message,
             size=28,
             weight=ft.FontWeight.BOLD,
             color=ft.colors.BLUE_900
@@ -1026,6 +1074,18 @@ class VeciRunApp:
         
         self.db.add(admin_user)
         self.db.add_all(operator_users)
+        
+        # NEW: Create sample regular user
+        regular_user = User(
+            cedula="88888888",
+            carnet="USER_88888888",
+            full_name="Usuario Regular",
+            email="usuario@universidad.edu",
+            affiliation=UserAffiliationEnum.estudiante,
+            role=UserRoleEnum.usuario
+        )
+        
+        self.db.add(regular_user)
         self.db.commit()
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
 name: CI
 
 on:
-  pull_request:
-    branches: [ main ]
+  push:              # runs on every push
+  pull_request:      # runs on every PR whatever the base branch
 
 jobs:
   test:
