@@ -11,6 +11,8 @@ records if their respective tables are empty.
 """
 
 from database import create_tables, SessionLocal, engine  # type: ignore
+from sample_data import populate_sample_data
+from sqlalchemy.orm import Session
 from models import (
     Base,
     Station,
@@ -22,7 +24,7 @@ from models import (
 )
 
 
-def populate_stations(session):
+def populate_stations(session: Session) -> None:
     """Ensure default stations are present, inserting any that are missing."""
     stations = [
         ("EST001", "Calle 26"),
@@ -46,14 +48,12 @@ def populate_stations(session):
     )
 
 
-def populate_bicycles(session):
+def populate_bicycles(session: Session) -> None:
     """Ensure 40 bicycles are present, inserting any missing ones."""
 
     bicycles = [(f"BIKE{num:03d}", f"B{num:03d}") for num in range(1, 41)]
 
-    existing_serials = {
-        serial for (serial,) in session.query(Bicycle.serial_number).all()
-    }
+    existing_serials = {serial for (serial,) in session.query(Bicycle.serial_number).all()}
 
     # Ensure pending station inserts are flushed so they are visible in query
     session.flush()
@@ -75,17 +75,13 @@ def populate_bicycles(session):
             )
             inserted += 1
 
-    print(
-        f"✅ Bicycles ensured: 40 total ({inserted} inserted, {40 - inserted} existing)"
-    )
+    print(f"✅ Bicycles ensured: 40 total ({inserted} inserted, {40 - inserted} existing)")
 
 
-def populate_users(session):
+def populate_users(session: Session) -> None:
     """Ensure admin, 5 operators and 20 regular users exist (26 total)."""
 
-    existing_cedulas = {
-        cedula for (cedula,) in session.query(User.cedula).all()
-    }
+    existing_cedulas = {cedula for (cedula,) in session.query(User.cedula).all()}
 
     to_add = []
 
@@ -141,9 +137,7 @@ def populate_users(session):
 
     session.add_all(to_add)
 
-    print(
-        f"✅ Users ensured: 26 total ({len(to_add)} inserted, {26 - len(to_add)} existing)"
-    )
+    print(f"✅ Users ensured: 26 total ({len(to_add)} inserted, {26 - len(to_add)} existing)")
 
 
 # ---------------------------------------------------------------------------
@@ -151,7 +145,7 @@ def populate_users(session):
 # ---------------------------------------------------------------------------
 
 
-def reset_database():
+def reset_database() -> None:
     """Drop all existing tables and recreate them fresh from the models."""
 
     # Drop everything first
@@ -163,16 +157,14 @@ def reset_database():
     print("🗑️  Existing tables dropped and schema recreated from models.")
 
 
-def main():
+def main() -> None:
     # Recreate the database schema from scratch (drop & create)
     reset_database()
 
     # Create a new session
     session = SessionLocal()
     try:
-        populate_stations(session)
-        populate_bicycles(session)
-        populate_users(session)
+        populate_sample_data(session)
 
         session.commit()
         print("\n🎉 Database population finished successfully!")
@@ -184,4 +176,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main()
