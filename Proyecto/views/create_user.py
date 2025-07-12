@@ -141,4 +141,4 @@ class CreateUserView(View):
         self.name_field.value = ""
         self.email_field.value = ""
         self.affiliation_dropdown.value = None
-        self.role_dropdown.value = "usuario" 
+        self.role_dropdown.value = "usuario"

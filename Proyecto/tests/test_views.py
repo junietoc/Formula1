@@ -18,6 +18,7 @@ from views.home import HomeView
 # Utilidades de prueba
 # ---------------------------------------------------------------------------
 
+
 class DummyPage:
     """Stub mínimo de ft.Page requerido por las vistas para tests."""
 
@@ -53,6 +54,7 @@ class DummyApp:
 # Fixture de sesión en memoria (reutiliza logic de test_services)
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(scope="function")
 def db_session():
     engine = create_engine("sqlite:///:memory:")
@@ -68,6 +70,7 @@ def db_session():
 # ---------------------------------------------------------------------------
 # Pruebas parametrizadas
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize(
     "view_cls",
@@ -85,4 +88,4 @@ def test_view_build_returns_control(view_cls, db_session):
 
     app = DummyApp(db_session)
     control = view_cls(app).build()
-    assert isinstance(control, ft.Control), f"{view_cls.__name__} no devolvió ft.Control" 
+    assert isinstance(control, ft.Control), f"{view_cls.__name__} no devolvió ft.Control"

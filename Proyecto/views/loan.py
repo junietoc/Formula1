@@ -77,12 +77,14 @@ class LoanView(View):
         # -------------------
         def _register(_: ft.ControlEvent) -> None:  # noqa: D401
             # Validaciones
-            if not all([
-                user_cedula.value,
-                bike_radio.value,
-                station_out.value,
-                station_in.value,
-            ]):
+            if not all(
+                [
+                    user_cedula.value,
+                    bike_radio.value,
+                    station_out.value,
+                    station_in.value,
+                ]
+            ):
                 _set_result("Todos los campos son obligatorios", ft.colors.RED)
                 return
             if station_out.value == station_in.value:
@@ -150,4 +152,4 @@ class LoanView(View):
                 result_text,
             ],
             scroll=ft.ScrollMode.AUTO,
-        ) 
+        )

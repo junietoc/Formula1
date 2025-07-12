@@ -22,7 +22,9 @@ class DashboardView(View):
             welcome_msg = f"¡Bienvenido, {user_name}!"
         else:
             welcome_msg = (
-                "¡Bienvenido, Administrador!" if role == "admin" else "¡Bienvenido, Usuario Regular!"
+                "¡Bienvenido, Administrador!"
+                if role == "admin"
+                else "¡Bienvenido, Usuario Regular!"
             )
 
         welcome_text = ft.Text(
@@ -56,9 +58,7 @@ class DashboardView(View):
                                             size=18,
                                             weight=ft.FontWeight.BOLD,
                                         ),
-                                        subtitle=ft.Text(
-                                            f"Estación: {station_name}", size=14
-                                        ),
+                                        subtitle=ft.Text(f"Estación: {station_name}", size=14),
                                     ),
                                     ft.Container(height=20),
                                     ft.Text(
@@ -176,7 +176,9 @@ class DashboardView(View):
                                                         color=ft.colors.GREY,
                                                         size=20,
                                                     ),
-                                                    ft.Text("Ver información de estaciones", size=14),
+                                                    ft.Text(
+                                                        "Ver información de estaciones", size=14
+                                                    ),
                                                 ]
                                             ),
                                         ],
@@ -201,7 +203,9 @@ class DashboardView(View):
             self.app.nav_rail.destinations = []
             self.app.nav_rail.selected_index = 0
             self.app.nav_rail.visible = False
-            self.app.content_area.content = __import__("views.home").views.home.HomeView(self.app).build()  # noqa: E501
+            self.app.content_area.content = (
+                __import__("views.home").views.home.HomeView(self.app).build()
+            )  # noqa: E501
             page.update()
 
         logout_btn = ft.ElevatedButton(
@@ -219,4 +223,4 @@ class DashboardView(View):
                 body_content,
             ],
             scroll=ft.ScrollMode.AUTO,
-        ) 
+        )

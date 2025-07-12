@@ -1,7 +1,16 @@
 import flet as ft
 from database import get_db, create_tables
 from services import UserService, BicycleService, StationService, LoanService
-from models import User, Bicycle, Station, Loan, UserRoleEnum, UserAffiliationEnum, BikeStatusEnum, LoanStatusEnum
+from models import (
+    User,
+    Bicycle,
+    Station,
+    Loan,
+    UserRoleEnum,
+    UserAffiliationEnum,
+    BikeStatusEnum,
+    LoanStatusEnum,
+)
 import uuid
 from views.create_user import CreateUserView
 from views.availability import AvailabilityView
@@ -10,15 +19,17 @@ from views.dashboard import DashboardView
 from views.loan import LoanView
 from views.return_view import ReturnView
 from typing import Callable, Dict
+
 # noqa: F401 needed for typing
 from views.base import View
 from sample_data import populate_sample_data
+
 
 class VeciRunApp:
     def __init__(self):
         self.db = next(get_db())
         self.current_user = None
-        
+
     def main(self, page: ft.Page):
         self.page = page  # Store page reference
         page.title = "VeciRun"
@@ -26,13 +37,13 @@ class VeciRunApp:
         page.window_maximized = True
         page.window_resizable = True
         page.padding = 20
-        
+
         # Initialize database
         create_tables()
-        
+
         # Create sample data if empty
         self.create_sample_data()
-        
+
         # Main navigation (will be updated based on role)
         self.nav_rail = ft.NavigationRail(
             selected_index=0,
@@ -40,16 +51,14 @@ class VeciRunApp:
             min_width=100,
             min_extended_width=200,
             destinations=[],
-            on_change=self.nav_change
+            on_change=self.nav_change,
         )
-        
+
         # Content area
         self.content_area = ft.Container(
-            content=ft.Text("Seleccione una opción del menú", size=20),
-            expand=True,
-            padding=20
+            content=ft.Text("Seleccione una opción del menú", size=20), expand=True, padding=20
         )
-        
+
         # Layout
         self.main_row = ft.Row(
             [
@@ -60,17 +69,17 @@ class VeciRunApp:
             expand=True,
         )
         page.add(self.main_row)
-        
+
         # Initially hide the navigation rail
         self.nav_rail.visible = False
-        
+
         # Show initial view
         self.content_area.content = HomeView(self).build()
         page.update()
-        
+
         # Initialize role-based navigation
         self.update_navigation_for_role("regular")
-    
+
     def nav_change(self, e: ft.ControlEvent):
         # Manejo centralizado usando self.view_registry
         index = e.control.selected_index
@@ -80,57 +89,74 @@ class VeciRunApp:
 
         self.content_area.content = view_factory().build()
         self.page.update()
-    
+
     # show_home_view eliminado: la lógica se trasladó a HomeView
-    
+
     def show_dashboard_view(self):
         """Wrapper para mostrar DashboardView (mantiene API pública)."""
         self.content_area.content = DashboardView(self).build()
         self.page.update()
-    
+
     def update_navigation_for_role(self, role):
         """Update navigation based on user role"""
         # Diccionario índice -> factory de vista
         self.view_registry: Dict[int, Callable[[], View]] = {}
 
         destinations = [
-            ft.NavigationRailDestination(icon=ft.icons.HOME, selected_icon=ft.icons.HOME, label="Inicio")
+            ft.NavigationRailDestination(
+                icon=ft.icons.HOME, selected_icon=ft.icons.HOME, label="Inicio"
+            )
         ]
         self.view_registry[0] = lambda: DashboardView(self)
 
         if role == "admin":
             destinations += [
-                ft.NavigationRailDestination(icon=ft.icons.PERSON_ADD, selected_icon=ft.icons.PERSON_ADD, label="Usuarios"),
-                ft.NavigationRailDestination(icon=ft.icons.DIRECTIONS_BIKE, selected_icon=ft.icons.DIRECTIONS_BIKE, label="Préstamo"),
-                ft.NavigationRailDestination(icon=ft.icons.ASSIGNMENT_RETURN, selected_icon=ft.icons.ASSIGNMENT_RETURN, label="Devolución"),
+                ft.NavigationRailDestination(
+                    icon=ft.icons.PERSON_ADD, selected_icon=ft.icons.PERSON_ADD, label="Usuarios"
+                ),
+                ft.NavigationRailDestination(
+                    icon=ft.icons.DIRECTIONS_BIKE,
+                    selected_icon=ft.icons.DIRECTIONS_BIKE,
+                    label="Préstamo",
+                ),
+                ft.NavigationRailDestination(
+                    icon=ft.icons.ASSIGNMENT_RETURN,
+                    selected_icon=ft.icons.ASSIGNMENT_RETURN,
+                    label="Devolución",
+                ),
             ]
             self.view_registry[1] = lambda: CreateUserView(self)
             self.view_registry[2] = lambda: LoanView(self)
             self.view_registry[3] = lambda: ReturnView(self)
         else:  # regular
             destinations.append(
-                ft.NavigationRailDestination(icon=ft.icons.LOCATION_ON, selected_icon=ft.icons.LOCATION_ON, label="Disponibilidad")
+                ft.NavigationRailDestination(
+                    icon=ft.icons.LOCATION_ON,
+                    selected_icon=ft.icons.LOCATION_ON,
+                    label="Disponibilidad",
+                )
             )
             self.view_registry[1] = lambda: AvailabilityView(self)
 
         self.nav_rail.destinations = destinations
         self.page.update()
-    
+
     def show_loan_view(self):  # Obsoletos: delegan a LoanView
         self.content_area.content = LoanView(self).build()
         self.page.update()
 
     def refresh_loan_view(self, page: ft.Page):
         pass  # mantenido para compatibilidad
-    
+
     def show_return_view(self):
         self.content_area.content = ReturnView(self).build()
         self.page.update()
-    
+
     def create_sample_data(self):
         """Create sample data for testing"""
         populate_sample_data(self.db)
 
+
 if __name__ == "__main__":
     app = VeciRunApp()
-    ft.app(target=app.main) 
+    ft.app(target=app.main)

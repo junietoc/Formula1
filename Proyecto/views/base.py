@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import flet as ft
 
+
 class View(ABC):
     """Clase base que define la interfaz de todas las vistas.
 
@@ -12,4 +13,4 @@ class View(ABC):
     @abstractmethod
     def build(self) -> ft.Control:  # noqa: D401
         """Construye y devuelve el contenido Flet para la vista."""
-        raise NotImplementedError 
+        raise NotImplementedError

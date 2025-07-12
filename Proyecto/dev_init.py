@@ -44,6 +44,7 @@ def run(command: str, *, cwd: Path | None = None, env: dict[str, str] | None = N
 # 1. Verificar versión de Python
 # ---------------------------------------------------------------------------
 
+
 def check_python_version(required: tuple[int, int] = (3, 11)) -> None:
     if sys.version_info < required:
         sys.exit(
@@ -56,6 +57,7 @@ def check_python_version(required: tuple[int, int] = (3, 11)) -> None:
 # ---------------------------------------------------------------------------
 # 2. Instalar dependencias
 # ---------------------------------------------------------------------------
+
 
 def install_dependencies() -> None:
     req_file = ROOT_DIR / "requirements.txt"
@@ -73,6 +75,7 @@ def install_dependencies() -> None:
 # 3. Asegurar archivo .env y DATABASE_URL
 # ---------------------------------------------------------------------------
 
+
 def ensure_env_file() -> None:
     env_path = ROOT_DIR / ".env"
     if env_path.exists():
@@ -89,6 +92,7 @@ def ensure_env_file() -> None:
 # ---------------------------------------------------------------------------
 # 4. Ejecutar migraciones Alembic
 # ---------------------------------------------------------------------------
+
 
 def run_migrations() -> None:
     alembic_ini = ROOT_DIR / "alembic.ini"
@@ -109,6 +113,7 @@ def run_migrations() -> None:
 # 5. Poblar datos de muestra
 # ---------------------------------------------------------------------------
 
+
 def load_sample_data() -> None:
     # populate_db.py ya maneja verificación de existencia de datos
     sample_scripts = [
@@ -125,6 +130,7 @@ def load_sample_data() -> None:
 # 6. Lanzar aplicación
 # ---------------------------------------------------------------------------
 
+
 def launch_app() -> None:
     log("Iniciando VeciRun… ¡Disfruta! 😊", emoji="🚀")
     os.execv(PY_CMD, [PY_CMD, str(ROOT_DIR / "main.py")])
@@ -140,4 +146,4 @@ if __name__ == "__main__":
     ensure_env_file()
     run_migrations()
     load_sample_data()
-    launch_app() 
+    launch_app()

@@ -109,4 +109,4 @@ def populate_sample_data(session: Session, *, num_bikes: int = 40) -> None:
             )
         )
 
-    session.commit() 
+    session.commit()

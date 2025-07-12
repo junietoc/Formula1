@@ -53,9 +53,7 @@ def populate_bicycles(session: Session) -> None:
 
     bicycles = [(f"BIKE{num:03d}", f"B{num:03d}") for num in range(1, 41)]
 
-    existing_serials = {
-        serial for (serial,) in session.query(Bicycle.serial_number).all()
-    }
+    existing_serials = {serial for (serial,) in session.query(Bicycle.serial_number).all()}
 
     # Ensure pending station inserts are flushed so they are visible in query
     session.flush()
@@ -77,17 +75,13 @@ def populate_bicycles(session: Session) -> None:
             )
             inserted += 1
 
-    print(
-        f"✅ Bicycles ensured: 40 total ({inserted} inserted, {40 - inserted} existing)"
-    )
+    print(f"✅ Bicycles ensured: 40 total ({inserted} inserted, {40 - inserted} existing)")
 
 
 def populate_users(session: Session) -> None:
     """Ensure admin, 5 operators and 20 regular users exist (26 total)."""
 
-    existing_cedulas = {
-        cedula for (cedula,) in session.query(User.cedula).all()
-    }
+    existing_cedulas = {cedula for (cedula,) in session.query(User.cedula).all()}
 
     to_add = []
 
@@ -143,9 +137,7 @@ def populate_users(session: Session) -> None:
 
     session.add_all(to_add)
 
-    print(
-        f"✅ Users ensured: 26 total ({len(to_add)} inserted, {26 - len(to_add)} existing)"
-    )
+    print(f"✅ Users ensured: 26 total ({len(to_add)} inserted, {26 - len(to_add)} existing)")
 
 
 # ---------------------------------------------------------------------------
@@ -184,4 +176,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main() 
+    main()

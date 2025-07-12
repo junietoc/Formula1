@@ -45,9 +45,7 @@ class HomeView(View):
                 ft.dropdown.Option("EST002", "Salida al Uriel Gutiérrez"),
                 ft.dropdown.Option("EST003", "Calle 53"),
                 ft.dropdown.Option("EST004", "Calle 45"),
-                ft.dropdown.Option(
-                    "EST005", "Edificio Ciencia y Tecnología"
-                ),
+                ft.dropdown.Option("EST005", "Edificio Ciencia y Tecnología"),
             ],
             visible=False,
             border_color=ft.colors.BLUE,
@@ -112,9 +110,7 @@ class HomeView(View):
                     return
                 user = UserService.get_user_by_cedula(db, cedula_field.value)
                 if not user or user.role != UserRoleEnum.usuario:
-                    _set_status(
-                        "Usuario no encontrado o rol inválido", ft.colors.RED
-                    )
+                    _set_status("Usuario no encontrado o rol inválido", ft.colors.RED)
                     return
                 self.app.current_user = user
 
@@ -198,16 +194,10 @@ class HomeView(View):
                             ),
                             padding=ft.padding.only(bottom=20),
                         ),
-                        ft.Container(
-                            content=cedula_field, padding=ft.padding.only(bottom=20)
-                        ),
+                        ft.Container(content=cedula_field, padding=ft.padding.only(bottom=20)),
                         station_container,
-                        ft.Container(
-                            content=sign_in_button, padding=ft.padding.only(top=20)
-                        ),
-                        ft.Container(
-                            content=status_text, padding=ft.padding.only(top=15)
-                        ),
+                        ft.Container(content=sign_in_button, padding=ft.padding.only(top=20)),
+                        ft.Container(content=status_text, padding=ft.padding.only(top=15)),
                     ],
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
@@ -251,4 +241,4 @@ class HomeView(View):
             expand=True,
         )
 
-        return container 
+        return container

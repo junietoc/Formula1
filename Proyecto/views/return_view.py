@@ -86,4 +86,4 @@ class ReturnView(View):
                 result_text,
             ],
             scroll=ft.ScrollMode.AUTO,
-        ) 
+        )

@@ -25,9 +25,7 @@ class AvailabilityView(View):
 
         availability_cards: list[ft.Control] = []
         for station in stations:
-            bike_count = sum(
-                1 for bike in available_bikes if bike.current_station_id == station.id
-            )
+            bike_count = sum(1 for bike in available_bikes if bike.current_station_id == station.id)
 
             card = ft.Card(
                 content=ft.Container(
@@ -35,12 +33,8 @@ class AvailabilityView(View):
                         [
                             ft.ListTile(
                                 leading=ft.Icon(ft.icons.LOCATION_ON, color=ft.colors.BLUE),
-                                title=ft.Text(
-                                    station.name, size=16, weight=ft.FontWeight.BOLD
-                                ),
-                                subtitle=ft.Text(
-                                    f"Código: {station.code}", size=12
-                                ),
+                                title=ft.Text(station.name, size=16, weight=ft.FontWeight.BOLD),
+                                subtitle=ft.Text(f"Código: {station.code}", size=12),
                             ),
                             ft.Container(
                                 content=ft.Row(
@@ -115,4 +109,4 @@ class AvailabilityView(View):
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             scroll=ft.ScrollMode.AUTO,
-        ) 
+        )

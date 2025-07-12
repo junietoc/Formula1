@@ -11,4 +11,4 @@ DB_FILENAME = BASE_DIR / "vecirun.db"
 # SQLite database URL with absolute path.
 # Use three slashes before the path string because the absolute path already starts with "/".
 # Example result: sqlite:////Users/yourname/project/vecirun.db
-DATABASE_URL = f"sqlite:///{DB_FILENAME}" 
+DATABASE_URL = f"sqlite:///{DB_FILENAME}"
