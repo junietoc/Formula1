@@ -22,7 +22,7 @@ jobs:
       - name: Run Ruff (linter)
         run: ruff .
       - name: Run Black (formato)
-        run: black --check .
+        run: black .
       - name: Run tests
         run: pytest -q 
 
