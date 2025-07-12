@@ -50,6 +50,32 @@
 
 ## 🚀 Instalación Rápida!
 
+¡Ponte a rodar en **2 pasos**! 🏁
+
+```bash
+# 1. Clona el repo y entra en él
+git clone <repository-url>
+cd vecirun
+
+# 2. Ejecútalo todo con un solo comando ✨
+dev init
+```
+
+El asistente `dev init` se encarga de:
+
+- Crear y activar un entorno virtual.
+- Instalar todas las dependencias.
+- Configurar la base de datos y aplicar migraciones.
+- Cargar datos de ejemplo para que pruebes la app al instante.
+
+> **Nota:** Si no tienes instalado el CLI `dev`, consulta la [documentación oficial](https://github.com/dev/cli) para añadirlo a tu sistema.
+
+---
+
+### 🛠️ Instalación Manual (opcional)
+
+Prefieres ir paso a paso o no puedes usar `dev init`? Sigue este flujo completo:
+
 ```bash
 # 1. Clona el repo
 $ git clone <repository-url>
@@ -73,11 +99,12 @@ $ echo "DATABASE_URL=postgresql://postgres:password@localhost:5432/vecirun_db" >
 # 6. Migraciones
 $ alembic upgrade head
 
-# 7. ¡Listo! Arranca la app 🏁
+# 7. (Opcional) Carga datos de muestra
+$ python dev_init.py
+
+# 8. Arranca la app 🏁
 $ python main.py
 ```
-
-> **TIP:** Si quieres datos de muestra, ejecuta `python dev_init.py` antes de iniciar la app.
 
 ---
 
