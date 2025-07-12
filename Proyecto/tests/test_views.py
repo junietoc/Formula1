@@ -13,6 +13,8 @@ from views.loan import LoanView
 from views.return_view import ReturnView
 from views.home import HomeView
 
+from unittest.mock import patch
+
 
 # ---------------------------------------------------------------------------
 # Utilidades de prueba
@@ -89,3 +91,43 @@ def test_view_build_returns_control(view_cls, db_session):
     app = DummyApp(db_session)
     control = view_cls(app).build()
     assert isinstance(control, ft.Control), f"{view_cls.__name__} no devolvió ft.Control"
+
+
+@pytest.fixture
+def mock_app():
+    class MockNavRail:
+        def __init__(self):
+            self.destinations = []
+            self.selected_index = None
+            self.visible = None
+
+    class MockPage:
+        def update(self):
+            pass
+
+    class MockApp:
+        def __init__(self):
+            self.nav_rail = MockNavRail()
+            self.content_area = type('', (), {'content': None})()
+            self.page = MockPage()
+
+    return MockApp()
+
+
+def test_home_view_instantiation(mock_app):
+    with patch('views.dashboard.HomeView') as MockHomeView:
+        instance = MockHomeView.return_value
+        instance.build.return_value = 'mocked_content'
+
+        dashboard_view = DashboardView(mock_app)
+        # Simulate the build process to get the logout button
+        column = dashboard_view.build()
+        logout_row = column.controls[1]
+        logout_btn = logout_row.controls[2]  # Access the logout button
+
+        # Simulate the click event
+        logout_btn.on_click(None)
+
+        MockHomeView.assert_called_once_with(mock_app)
+        instance.build.assert_called_once()
+        assert mock_app.content_area.content == 'mocked_content'

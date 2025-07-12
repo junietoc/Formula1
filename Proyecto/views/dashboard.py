@@ -3,6 +3,7 @@ import flet as ft
 from models import UserRoleEnum
 
 from .base import View
+from views.home import HomeView
 
 
 class DashboardView(View):
@@ -203,9 +204,7 @@ class DashboardView(View):
             self.app.nav_rail.destinations = []
             self.app.nav_rail.selected_index = 0
             self.app.nav_rail.visible = False
-            self.app.content_area.content = (
-                __import__("views.home").views.home.HomeView(self.app).build()
-            )  # noqa: E501
+            self.app.content_area.content = HomeView(self.app).build()
             page.update()
 
         logout_btn = ft.ElevatedButton(
