@@ -3,6 +3,11 @@ import pytest
 
 # Import the target app after patching flet.ElevatedButton to a lightweight stub
 import flet as ft
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+import database  # project module that provides SessionLocal and get_db
+from models import Base
 
 class _DummyElevatedButton:
     """Lightweight stub that simply stores the most recent on_click callback."""
@@ -25,6 +30,16 @@ def test_register_loan_callback_no_unbound_error():
 
     # -- Arrange --
     app = VeciRunApp()
+
+    # ---- Patch DB to in-memory for this test ----
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    TestingSessionLocal = sessionmaker(bind=engine)
+    Base.metadata.create_all(engine)
+
+    # Override the SessionLocal used by get_db()
+    database.SessionLocal = TestingSessionLocal  # type: ignore
+    # Replace existing app.db with fresh session from the in-memory DB
+    app.db = TestingSessionLocal()
 
     # Minimal dummy page object with an update method (called inside refresh_loan_view)
     dummy_page = types.SimpleNamespace(update=lambda *args, **kwargs: None)
