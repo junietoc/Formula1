@@ -20,15 +20,18 @@ import enum
 
 Base = declarative_base()
 
+
 class UserRoleEnum(enum.Enum):
     usuario = "usuario"
     operador = "operador"
     admin = "admin"
 
+
 class UserAffiliationEnum(enum.Enum):
     estudiante = "estudiante"
     docente = "docente"
     administrativo = "administrativo"
+
 
 class BikeStatusEnum(enum.Enum):
     disponible = "disponible"
@@ -36,11 +39,13 @@ class BikeStatusEnum(enum.Enum):
     mantenimiento = "mantenimiento"
     retirada = "retirada"
 
+
 class LoanStatusEnum(enum.Enum):
     abierto = "abierto"
     cerrado = "cerrado"
     tardio = "tardio"
     perdido = "perdido"
+
 
 # ------------------------
 # Nuevas enumeraciones
@@ -72,9 +77,10 @@ class PrivilegeTypeEnum(enum.Enum):
     reserva = "reserva"
     otro = "otro"
 
+
 class User(Base):
     __tablename__ = "users"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     cedula = Column(String(15), unique=True, nullable=False)
     carnet = Column(String(20), unique=True, nullable=False)
@@ -87,7 +93,7 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     privilege = Column(Enum(PrivilegeTypeEnum))
     favorite_bike_id = Column(UUID(as_uuid=True), ForeignKey("bicycles.id"))
-    
+
     # Relationships
     loans = relationship("Loan", back_populates="user", foreign_keys="Loan.user_id")
     favorite_bike = relationship("Bicycle", foreign_keys=[favorite_bike_id])
@@ -103,9 +109,10 @@ class User(Base):
         back_populates="receiver",
     )
 
+
 class Bicycle(Base):
     __tablename__ = "bicycles"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     serial_number = Column(String(40), unique=True, nullable=False)
     bike_code = Column(String(10), unique=True, nullable=False)
@@ -113,7 +120,7 @@ class Bicycle(Base):
     current_station_id = Column(UUID(as_uuid=True), ForeignKey("stations.id"))
     last_service_at = Column(Date)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
+
     # Relationships
     loans = relationship("Loan", back_populates="bike")
     current_station = relationship("Station", foreign_keys=[current_station_id])
@@ -125,9 +132,10 @@ class Bicycle(Base):
         Index("ix_bicycles_current_station_id", "current_station_id"),
     )
 
+
 class Station(Base):
     __tablename__ = "stations"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     code = Column(String(10), unique=True, nullable=False)
     name = Column(String(80))
@@ -135,15 +143,18 @@ class Station(Base):
     capacity = Column(SmallInteger)
     reserved_bicycles = Column(SmallInteger)
     active = Column(Boolean, default=True)
-    
+
     # Relationships
-    loans_out = relationship("Loan", foreign_keys="Loan.station_out_id", back_populates="station_out")
+    loans_out = relationship(
+        "Loan", foreign_keys="Loan.station_out_id", back_populates="station_out"
+    )
     loans_in = relationship("Loan", foreign_keys="Loan.station_in_id", back_populates="station_in")
     inventory_reports = relationship("InventoryReport", back_populates="station")
 
+
 class Loan(Base):
     __tablename__ = "loans"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     bike_id = Column(UUID(as_uuid=True), ForeignKey("bicycles.id"), nullable=False)
@@ -155,12 +166,12 @@ class Loan(Base):
     time_in = Column(DateTime(timezone=True))
     duration_min = Column(Integer)
     status = Column(Enum(LoanStatusEnum), default=LoanStatusEnum.abierto)
-    
+
     # Relationships
     user = relationship("User", back_populates="loans", foreign_keys=[user_id])
     bike = relationship("Bicycle", back_populates="loans")
     station_out = relationship("Station", foreign_keys=[station_out_id], back_populates="loans_out")
-    station_in = relationship("Station", foreign_keys=[station_in_id], back_populates="loans_in") 
+    station_in = relationship("Station", foreign_keys=[station_in_id], back_populates="loans_in")
     operator_out = relationship("User", foreign_keys=[operator_out_id])
     operator_in = relationship("User", foreign_keys=[operator_in_id])
 
@@ -169,6 +180,7 @@ class Loan(Base):
         Index("ix_loans_bike_id", "bike_id"),
         Index("ix_loans_status", "status"),
     )
+
 
 # ---------------------------------------------------------------------------
 # NUEVAS TABLAS
@@ -194,7 +206,9 @@ class Reservation(Base):
 class Evaluation(Base):
     __tablename__ = "evaluations"
 
-    loan_id = Column(UUID(as_uuid=True), ForeignKey("loans.id", ondelete="CASCADE"), primary_key=True)
+    loan_id = Column(
+        UUID(as_uuid=True), ForeignKey("loans.id", ondelete="CASCADE"), primary_key=True
+    )
     stars = Column(SmallInteger)
     comment = Column(Text)
     evaluator_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
@@ -222,9 +236,7 @@ class Incident(Base):
     bike = relationship("Bicycle", back_populates="incidents")
     reporter = relationship("User")
 
-    __table_args__ = (
-        Index("ix_incidents_bike_id", "bike_id"),
-    )
+    __table_args__ = (Index("ix_incidents_bike_id", "bike_id"),)
 
 
 class Sanction(Base):
@@ -244,9 +256,7 @@ class Sanction(Base):
     incident = relationship("Incident")
     operator = relationship("User", foreign_keys=[operator_id])
 
-    __table_args__ = (
-        Index("ix_sanctions_user_id", "user_id"),
-    )
+    __table_args__ = (Index("ix_sanctions_user_id", "user_id"),)
 
 
 class Privilege(Base):
@@ -301,4 +311,4 @@ class InventoryReport(Base):
     notes = Column(Text)
 
     station = relationship("Station", back_populates="inventory_reports")
-    reporter = relationship("User") 
+    reporter = relationship("User")

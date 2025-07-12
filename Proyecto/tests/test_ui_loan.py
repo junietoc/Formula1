@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 import database  # project module that provides SessionLocal and get_db
 from models import Base
 
+
 class _DummyElevatedButton:
     """Lightweight stub that simply stores the most recent on_click callback."""
 
@@ -18,6 +19,7 @@ class _DummyElevatedButton:
         # Save callback both on the instance and at class level for easy retrieval
         self.on_click = on_click
         _DummyElevatedButton.last_callback = on_click
+
 
 # Apply monkeypatch at import-time so main.py uses the stub
 ft.ElevatedButton = _DummyElevatedButton  # type: ignore
@@ -61,4 +63,4 @@ def test_register_loan_callback_no_unbound_error():
     try:
         callback(None)  # Pass dummy event
     except UnboundLocalError as exc:
-        pytest.fail(f"UnboundLocalError raised: {exc}") 
+        pytest.fail(f"UnboundLocalError raised: {exc}")

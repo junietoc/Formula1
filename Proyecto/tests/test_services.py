@@ -18,6 +18,7 @@ from services import UserService, BicycleService, StationService, LoanService
 # Fixtures
 # -----------------------
 
+
 @pytest.fixture(scope="function")
 def session():
     """Creates a new in-memory SQLite database for each test function."""
@@ -39,6 +40,7 @@ def session():
 # Helper factories
 # -----------------------
 
+
 def _create_station(db, code: str, name: str) -> Station:
     station = Station(code=code, name=name)
     db.add(station)
@@ -47,7 +49,9 @@ def _create_station(db, code: str, name: str) -> Station:
     return station
 
 
-def _create_bicycle(db, serial: str, code: str, status: BikeStatusEnum = BikeStatusEnum.disponible) -> Bicycle:
+def _create_bicycle(
+    db, serial: str, code: str, status: BikeStatusEnum = BikeStatusEnum.disponible
+) -> Bicycle:
     bike = Bicycle(serial_number=serial, bike_code=code, status=status)
     db.add(bike)
     db.commit()
@@ -58,6 +62,7 @@ def _create_bicycle(db, serial: str, code: str, status: BikeStatusEnum = BikeSta
 # -----------------------
 # UserService tests
 # -----------------------
+
 
 def test_create_user_generates_carnet_when_empty(session):
     user = UserService.create_user(
@@ -95,6 +100,7 @@ def test_get_user_by_carnet(session):
 # BicycleService tests
 # -----------------------
 
+
 def test_get_available_bicycles_filters_by_status(session):
     bike_available = _create_bicycle(session, "S001", "B001", BikeStatusEnum.disponible)
     _create_bicycle(session, "S002", "B002", BikeStatusEnum.prestada)
@@ -109,6 +115,7 @@ def test_get_available_bicycles_filters_by_status(session):
 # StationService tests
 # -----------------------
 
+
 def test_get_station_by_code(session):
     station = _create_station(session, "EST001", "Calle 26")
 
@@ -119,6 +126,7 @@ def test_get_station_by_code(session):
 # -----------------------
 # LoanService tests
 # -----------------------
+
 
 def test_loan_lifecycle(session):
     """End-to-end test: create loan -> verify open -> return loan -> verify closed."""
@@ -174,4 +182,4 @@ def test_loan_lifecycle(session):
 
     # Attempting to return again should raise ValueError
     with pytest.raises(ValueError):
-        LoanService.return_loan(session, loan.id, station_in.id) 
+        LoanService.return_loan(session, loan.id, station_in.id)
