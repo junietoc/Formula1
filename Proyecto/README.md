@@ -78,8 +78,8 @@ Prefieres ir paso a paso o no puedes usar `dev init`? Sigue este flujo completo:
 
 ```bash
 # 1. Clona el repo
-$ git clone <repository-url>
-$ cd vecirun
+$ git clone git@github.com:junietoc/Formula1.git
+$ cd Formula1/Proyecto 
 
 # 2. Crea y activa un entorno virtual
 $ python -m venv venv
