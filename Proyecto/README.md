@@ -4,7 +4,7 @@
 
 <div align="center">
 
-![VeciRun banner](https://user-images.githubusercontent.com/placeholder/vecirun-banner.png)
+![VeciRun banner](vecirunbanner.png)
 
 </div>
 
