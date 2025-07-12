@@ -58,7 +58,7 @@ git clone <repository-url>
 cd vecirun
 
 # 2. Ejecútalo todo con un solo comando ✨
-dev init
+python dev_init.py
 ```
 
 El asistente `dev init` se encarga de:
