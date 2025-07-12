@@ -193,8 +193,23 @@ class CreateUserView(View):
     # Helpers
     # ------------------------------------------------------------------
     def _set_result(self, message: str, color: str) -> None:
-        self.result_text.value = message
-        self.result_text.color = color
+        # Evitar duplicar mensajes: ya no modificamos el `Text` en pantalla,
+        # solo mostramos el SnackBar.
+
+        # --------------------------------------------------
+        # Mostrar alerta emergente con el resultado de la operación
+        # --------------------------------------------------
+        page = self.app.page
+        # Configurar un SnackBar del color correspondiente y abrirlo
+        page.snack_bar = ft.SnackBar(
+            content=ft.Text(message, color=ft.colors.WHITE),
+            bgcolor=color,
+            open=True,
+            duration=3000,  # ms
+        )
+        # Actualizar la página para que el SnackBar sea visible
+        if hasattr(page, "update") and callable(getattr(page, "update")):
+            page.update()
 
     def _clear_fields(self) -> None:
         self.cedula_field.value = ""
