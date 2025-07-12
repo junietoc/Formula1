@@ -146,7 +146,29 @@ class VeciRunApp:
         self.page.update()
 
     def refresh_loan_view(self, page: ft.Page):
-        pass  # mantenido para compatibilidad
+        """Re-render the **LoanView** in isolation.
+
+        This helper is mainly used by unit tests that need to exercise the
+        *register_loan* callback without running a full Flet application. The
+        implementation therefore has to work even when `page` is a lightweight
+        stub (see *tests/test_ui_loan.py*).
+        """
+        # Store the page reference (test may pass a stub)
+        self.page = page  # type: ignore
+
+        # Ensure *content_area* exists – tests inject a stub if running outside
+        # a real Flet UI.
+        if not hasattr(self, "content_area"):
+            self.content_area = ft.Container()
+
+        # Build a fresh LoanView and assign it so that the stubbed
+        # ``ft.ElevatedButton`` inside the view is instantiated, allowing the
+        # test to grab its callback.
+        self.content_area.content = LoanView(self).build()
+
+        # Call update() on the provided page object if available.
+        if hasattr(page, "update") and callable(getattr(page, "update")):
+            page.update()
 
     def show_return_view(self):
         self.content_area.content = ReturnView(self).build()
