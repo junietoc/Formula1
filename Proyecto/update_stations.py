@@ -7,7 +7,7 @@ import sqlite3
 import uuid
 from config import DB_FILENAME
 
-def create_stations():
+def create_stations() -> None:
     """Crear las estaciones con los nombres correctos"""
     try:
         # Conectar a la base de datos

@@ -11,6 +11,8 @@ records if their respective tables are empty.
 """
 
 from database import create_tables, SessionLocal, engine  # type: ignore
+from sample_data import populate_sample_data
+from sqlalchemy.orm import Session
 from models import (
     Base,
     Station,
@@ -22,7 +24,7 @@ from models import (
 )
 
 
-def populate_stations(session):
+def populate_stations(session: Session) -> None:
     """Ensure default stations are present, inserting any that are missing."""
     stations = [
         ("EST001", "Calle 26"),
@@ -46,7 +48,7 @@ def populate_stations(session):
     )
 
 
-def populate_bicycles(session):
+def populate_bicycles(session: Session) -> None:
     """Ensure 40 bicycles are present, inserting any missing ones."""
 
     bicycles = [(f"BIKE{num:03d}", f"B{num:03d}") for num in range(1, 41)]
@@ -80,7 +82,7 @@ def populate_bicycles(session):
     )
 
 
-def populate_users(session):
+def populate_users(session: Session) -> None:
     """Ensure admin, 5 operators and 20 regular users exist (26 total)."""
 
     existing_cedulas = {
@@ -151,7 +153,7 @@ def populate_users(session):
 # ---------------------------------------------------------------------------
 
 
-def reset_database():
+def reset_database() -> None:
     """Drop all existing tables and recreate them fresh from the models."""
 
     # Drop everything first
@@ -163,16 +165,14 @@ def reset_database():
     print("🗑️  Existing tables dropped and schema recreated from models.")
 
 
-def main():
+def main() -> None:
     # Recreate the database schema from scratch (drop & create)
     reset_database()
 
     # Create a new session
     session = SessionLocal()
     try:
-        populate_stations(session)
-        populate_bicycles(session)
-        populate_users(session)
+        populate_sample_data(session)
 
         session.commit()
         print("\n🎉 Database population finished successfully!")
