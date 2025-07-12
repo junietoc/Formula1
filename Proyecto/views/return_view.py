@@ -88,6 +88,14 @@ class ReturnView(View):
         def _set_result(msg: str, color: str):
             result_text.value = msg
             result_text.color = color
+
+            # Mostrar SnackBar emergente con el resultado
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text(msg, color=ft.colors.WHITE),
+                bgcolor=color,
+                open=True,
+                duration=3000,
+            )
             page.update()
 
         # ------------------------------------------------------------------
