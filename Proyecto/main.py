@@ -40,7 +40,9 @@ from views.availability import AvailabilityView
 from views.home import HomeView
 from views.dashboard import DashboardView
 from views.loan import LoanView
+# Added view to display current open loan for regular users
 from views.return_view import ReturnView
+from views.current_loan import CurrentLoanView
 from typing import Callable, Dict
 
 # noqa: F401 needed for typing
@@ -156,14 +158,22 @@ class VeciRunApp:
             self.view_registry[2] = lambda: LoanView(self)
             self.view_registry[3] = lambda: ReturnView(self)
         else:  # regular
-            destinations.append(
+            destinations += [
                 ft.NavigationRailDestination(
                     icon=ft.icons.LOCATION_ON,
                     selected_icon=ft.icons.LOCATION_ON,
                     label="Disponibilidad",
-                )
-            )
+                ),
+                ft.NavigationRailDestination(
+                    icon=ft.icons.DIRECTIONS_BIKE,
+                    selected_icon=ft.icons.DIRECTIONS_BIKE,
+                    label="Mi Préstamo",
+                ),
+            ]
+
+            # Índices coherentes con las posiciones de *destinations*
             self.view_registry[1] = lambda: AvailabilityView(self)
+            self.view_registry[2] = lambda: CurrentLoanView(self)
 
         self.nav_rail.destinations = destinations
         self.page.update()
