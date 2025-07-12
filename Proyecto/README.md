@@ -138,6 +138,38 @@ La navegación se adapta automáticamente según tu selección. ¡Todo en una so
 
 ---
 
+## 📊 Datos de Prueba
+
+Para facilitar las pruebas de registro y devolución, se han precargado los siguientes datos en la base de datos:
+
+### Estaciones
+- **EST001**: Calle 26
+- **EST002**: Salida al Uriel Gutiérrez
+- **EST003**: Calle 53
+- **EST004**: Calle 45
+- **EST005**: Edificio Ciencia y Tecnología
+
+### Bicicletas
+- **Bicicletas**: 40 bicicletas con seriales desde `BIKE001` hasta `BIKE040`.
+
+### Usuarios
+- **Administrador**:
+  - Cédula: 12345678
+  - Carnet: USER_12345678
+  - Nombre: Administrador Sistema
+  - Email: admin@universidad.edu
+
+- **Operadores**:
+  - Cédula: 11111111, Nombre: Operador Calle 26
+  - Cédula: 22222222, Nombre: Operador Uriel Gutiérrez
+  - Cédula: 33333333, Nombre: Operador Calle 53
+  - Cédula: 44444444, Nombre: Operador Calle 45
+  - Cédula: 55555555, Nombre: Operador Ciencia y Tecnología
+
+- **Usuarios Regulares**: 20 usuarios con cédulas desde `80000000` hasta `80000019`.
+
+---
+
 ## 🗂️ Estructura del Proyecto
 
 ```bash
