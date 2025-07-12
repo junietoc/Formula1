@@ -11,6 +11,10 @@ from models import (
 )
 from datetime import datetime
 import uuid
+from datetime import timezone, timedelta
+
+# Zona horaria de Colombia (UTC-5)
+CO_TZ = timezone(timedelta(hours=-5))
 
 
 class UserService:
@@ -94,13 +98,14 @@ class LoanService:
         station_in_id: uuid.UUID | None = None,
     ) -> Loan:
         """Register a loan (bike check-out)"""
-        # Create the loan
+        # Create the loan con timestamp en hora local de Colombia
         loan = Loan(
             user_id=user_id,
             bike_id=bike_id,
             station_out_id=station_out_id,
             station_in_id=station_in_id,
             status=LoanStatusEnum.abierto,
+            time_out=datetime.now(CO_TZ),
         )
         db.add(loan)
 
@@ -125,7 +130,7 @@ class LoanService:
 
         # Update loan
         loan.station_in_id = station_in_id
-        loan.time_in = datetime.utcnow()
+        loan.time_in = datetime.now(CO_TZ)
         loan.status = LoanStatusEnum.cerrado
 
         # Update bicycle status back to 'disponible'
