@@ -48,7 +48,7 @@
 
 ---
 
-## 🚀 Instalación Rápida
+## 🚀 Instalación Rápida!
 
 ```bash
 # 1. Clona el repo
