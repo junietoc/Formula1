@@ -25,7 +25,15 @@ def create_stations() -> None:
             ("EST005", "Edificio Ciencia y Tecnología"),
         ]
         
+        # Obtener códigos existentes para evitar duplicados
+        cursor.execute("SELECT code FROM stations")
+        existing_codes = {row[0] for row in cursor.fetchall()}
+
         for code, name in stations:
+            if code in existing_codes:
+                print(f"⚠️  {code} ya existe – se omite")
+                continue
+
             station_id = str(uuid.uuid4())
             cursor.execute(
                 "INSERT INTO stations (id, code, name) VALUES (?, ?, ?)",

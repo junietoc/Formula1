@@ -1,227 +1,161 @@
-# VeciRun
+# 🚴‍♂️ VeciRun – ¡Tu sistema de bicicletas universitarias!
 
-Aplicación de escritorio minimal-viable para el sistema de préstamo de bicicletas universitario.
+> Una aplicación **minimal-viable** para gestionar el préstamo y devolución de 🚲 en la universidad.
 
-## Stack Tecnológico
+<div align="center">
 
-- **Python 3.11**
-- **Flet** (desktop mode)
-- **PostgreSQL 16**
-- **SQLAlchemy** (ORM)
-- **Alembic** (migraciones)
+![VeciRun banner](https://user-images.githubusercontent.com/placeholder/vecirun-banner.png)
 
-## Arquitectura
+</div>
 
-Aplicación monolítica con las siguientes capas:
-- **Presentación**: Flet UI
-- **Lógica de Negocio**: Services
-- **Acceso a Datos**: SQLAlchemy + PostgreSQL
+---
 
-## Funcionalidades Implementadas
+## 📑 Tabla de Contenido
 
-### 1. Crear Usuario
-- Registro de usuarios (estudiantes, docentes, administrativos)
-- Roles: usuario, operador, admin
-- Validación de cédula única (carnet se genera automáticamente)
+1. [Características Principales](#-características-principales)
+2. [Stack Tecnológico](#-stack-tecnológico)
+3. [Instalación Rápida](#-instalación-rápida)
+4. [Uso de la App](#-uso-de-la-app)
+5. [Guías Flash ⚡](#-guías-flash-)
+6. [Estructura del Proyecto](#️-estructura-del-proyecto)
+7. [Comandos Útiles](#-comandos-útiles)
+8. [Contribuir](#-contribuir)
+9. [Licencia](#-licencia)
 
-### 2. Registrar Préstamo
-- Check-out de bicicletas
-- Validación de disponibilidad
-- Asociación con estación de salida
+---
 
-### 3. Registrar Devolución
-- Check-in de bicicletas
-- Cierre de préstamos
-- Actualización de estado de bicicletas
+## ✨ Características Principales
 
-## Instalación y Configuración
+✅ Registro y gestión de **usuarios** con roles (`usuario`, `operador`, `admin`).
 
-### Prerrequisitos
+✅ Control de **préstamos** y **devoluciones** en estaciones.
 
-1. **Python 3.11** instalado
-2. **PostgreSQL 16** instalado y ejecutándose
-3. **pip** para gestión de dependencias
+✅ 🎛️ Dashboard para operadores con actualización en tiempo real.
 
-### Pasos de Instalación
+✅ Datos de ejemplo precargados para que pruebes la app en 1 clic.
 
-1. **Clonar el repositorio**
-   ```bash
-   git clone <repository-url>
-   cd vecirun
-   ```
+---
 
-2. **Crear entorno virtual**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # En Windows: venv\Scripts\activate
-   ```
+## 🛠️ Stack Tecnológico
 
-3. **Instalar dependencias**
-   ```bash
-   pip install -r requirements.txt
-   ```
+| Módulo | Descripción |
+| ------ | ----------- |
+| 🐍 Python 3.11 | Lenguaje principal |
+| 🎨 Flet (modo Desktop) | UI en Flutter para Desktop |
+| 🐘 PostgreSQL 16 | Motor de base de datos |
+| 🔗 SQLAlchemy | ORM |
+| 🪄 Alembic | Migraciones |
 
-4. **Configurar base de datos**
-   
-   Crear base de datos PostgreSQL:
-   ```sql
-   CREATE DATABASE vecirun_db;
-   CREATE USER postgres WITH PASSWORD 'password';
-   GRANT ALL PRIVILEGES ON DATABASE vecirun_db TO postgres;
-   ```
+---
 
-5. **Configurar variables de entorno**
-   
-   Crear archivo `.env` en la raíz del proyecto:
-   ```
-   DATABASE_URL=postgresql://postgres:password@localhost:5432/vecirun_db
-   ```
+## 🚀 Instalación Rápida
 
-6. **Ejecutar migraciones**
-   ```bash
-   alembic upgrade head
-   ```
+```bash
+# 1. Clona el repo
+$ git clone <repository-url>
+$ cd vecirun
 
-7. **Ejecutar la aplicación**
-   ```bash
-   python main.py
-   ```
+# 2. Crea y activa un entorno virtual
+$ python -m venv venv
+$ source venv/bin/activate  # En Windows: venv\Scripts\activate
 
-## Estructura del Proyecto
+# 3. Instala dependencias
+$ pip install -r requirements.txt
 
+# 4. Prepara la base de datos (PostgreSQL debe estar corriendo)
+$ createdb vecirun_db
+$ psql -c "CREATE USER postgres WITH PASSWORD 'password';"
+$ psql -c "GRANT ALL PRIVILEGES ON DATABASE vecirun_db TO postgres;"
+
+# 5. Variables de entorno (crea un archivo .env)
+$ echo "DATABASE_URL=postgresql://postgres:password@localhost:5432/vecirun_db" > .env
+
+# 6. Migraciones
+$ alembic upgrade head
+
+# 7. ¡Listo! Arranca la app 🏁
+$ python main.py
 ```
+
+> **TIP:** Si quieres datos de muestra, ejecuta `python dev_init.py` antes de iniciar la app.
+
+---
+
+## 🎮 Uso de la App
+
+Al abrir la aplicación encontrarás una pantalla de inicio para escoger tu **rol**:
+
+• **Usuario Regular** – consulta rápida de disponibilidad 🚲.
+
+• **Administrador** – panel completo para crear usuarios, registrar préstamos y devoluciones.
+
+La navegación se adapta automáticamente según tu selección. ¡Todo en una sola ventana!
+
+---
+
+## ⚡ Guías Flash ⚡
+
+### 🔹 Usuario Regular – Ver disponibilidad
+
+1. Abre la app y selecciona **Usuario Regular**.
+2. Visualiza la lista de estaciones y bicicletas disponibles.
+3. Pulsa **Actualizar** para refrescar la información.
+
+### 🔸 Administrador – Préstamo & Devolución
+
+1. Selecciona **Administrador** > elige tu estación > **Continuar**.
+2. Ve a **Registrar Préstamo** y rellena los campos.
+3. Después, ve a **Registrar Devolución** para cerrar el ciclo.
+
+*(Consulta datos de demo en la sección **Datos de Prueba** más abajo).*  
+
+---
+
+## 🗂️ Estructura del Proyecto
+
+```bash
 vecirun/
-├── main.py              # Aplicación principal Flet
-├── models.py            # Modelos SQLAlchemy
-├── services.py          # Lógica de negocio
-├── database.py          # Configuración de base de datos
-├── config.py            # Configuración general
-├── requirements.txt     # Dependencias Python
-├── alembic.ini         # Configuración Alembic
-├── alembic/
-│   ├── env.py          # Entorno Alembic
-│   ├── script.py.mako  # Template de migraciones
-│   └── versions/       # Archivos de migración
-└── README.md           # Este archivo
+├── main.py             # Aplicación principal Flet
+├── models.py           # Modelos SQLAlchemy
+├── services.py         # Lógica de negocio
+├── database.py         # Configuración DB
+├── alembic/            # Migraciones
+└── ...
 ```
 
-## Esquema de Base de Datos
+---
 
-### Enums
-- `user_role_enum`: usuario, operador, admin
-- `user_affiliation_enum`: estudiante, docente, administrativo
-- `bike_status_enum`: disponible, prestada, mantenimiento, retirada
-- `loan_status_enum`: abierto, cerrado, tardio, perdido
+## 🔧 Comandos Útiles
 
-### Tablas
-- `users`: Información de usuarios
-- `bicycles`: Información de bicicletas
-- `stations`: Estaciones de préstamo/devolución
-- `loans`: Registro de préstamos
-
-## Uso de la Aplicación
-
-### 0. Pantalla de Inicio
-1. Al abrir la aplicación, se muestra la pantalla de inicio
-2. Seleccionar rol: "Usuario Regular" o "Administrador"
-3. Si se selecciona "Administrador", elegir estación asignada
-4. Hacer clic en "Continuar" para confirmar la selección
-5. La navegación se actualiza según el rol seleccionado
-
-### 1. Crear Usuario (Solo Administradores)
-1. Seleccionar "Crear Usuario" en el menú lateral
-2. Completar todos los campos obligatorios
-3. Seleccionar afiliación y rol
-4. Hacer clic en "Crear Usuario"
-
-### 2. Registrar Préstamo (Solo Administradores)
-1. Seleccionar "Registrar Préstamo" en el menú lateral
-2. Ingresar cédula del usuario
-3. Seleccionar bicicleta disponible de la lista
-4. Ingresar código de estación de salida
-5. Hacer clic en "Registrar Préstamo"
-
-### 3. Registrar Devolución (Solo Administradores)
-1. Seleccionar "Registrar Devolución" en el menú lateral
-2. Ingresar cédula del usuario
-3. Ingresar código de estación de devolución
-4. Hacer clic en "Registrar Devolución"
-
-### 4. Consultar Disponibilidad (Solo Usuarios Regulares)
-1. Seleccionar "Disponibilidad" en el menú lateral
-2. Ver la cantidad de bicicletas disponibles por estación
-3. Usar el botón "Actualizar" para refrescar la información
-
-## Datos de Prueba
-
-La aplicación incluye datos de muestra automáticamente:
-
-### Estaciones
-- EST001: Calle 26
-- EST002: Salida al Uriel Gutiérrez
-- EST003: Calle 53
-- EST004: Calle 45
-- EST005: Edificio Ciencia y Tecnología
-
-### Bicicletas
-- B001: BIKE001 (disponible)
-- B002: BIKE002 (disponible)
-- B003: BIKE003 (disponible)
-
-### Usuarios del Sistema
-
-#### Usuario Administrador
-- Cédula: 12345678
-- Carnet: USER_12345678 (generado automáticamente)
-- Email: admin@universidad.edu
-
-#### Usuarios Operadores (uno por estación)
-- **Operador Calle 26**: Cédula 11111111, Email: operador1@universidad.edu
-- **Operador Uriel Gutiérrez**: Cédula 22222222, Email: operador2@universidad.edu
-- **Operador Calle 53**: Cédula 33333333, Email: operador3@universidad.edu
-- **Operador Calle 45**: Cédula 44444444, Email: operador4@universidad.edu
-- **Operador Ciencia y Tecnología**: Cédula 55555555, Email: operador5@universidad.edu
-
-## Comandos Útiles
-
-### Migraciones
 ```bash
 # Crear nueva migración
-alembic revision --autogenerate -m "descripción"
+$ alembic revision --autogenerate -m "descripcion"
 
-# Ejecutar migraciones pendientes
-alembic upgrade head
+# Aplicar migraciones pendientes
+$ alembic upgrade head
 
 # Revertir última migración
-alembic downgrade -1
+$ alembic downgrade -1
 ```
 
-### Base de Datos
-```bash
-# Crear tablas (sin migraciones)
-python -c "from database import create_tables; create_tables()"
-```
+---
 
-## Notas de Desarrollo
+## 🤝 Contribuir
 
-- La aplicación utiliza UUIDs como claves primarias
-- Todas las operaciones incluyen validaciones de negocio
-- Los estados de bicicletas se actualizan automáticamente
-- La interfaz es responsive y moderna
-- Se incluye manejo de errores completo
+¡Las contribuciones son bienvenidas! Si encuentras un 🐛 bug o quieres proponer una 💡 mejora:
 
-## Troubleshooting
+1. Abre un **Issue** describiendo tu propuesta.
+2. Haz un **Fork** del proyecto y crea una rama con tu feature: `git checkout -b feature/mi-mejora`.
+3. Envía un **Pull Request** explicando los cambios.
 
-### Error de Conexión a Base de Datos
-- Verificar que PostgreSQL esté ejecutándose
-- Confirmar credenciales en `.env`
-- Verificar que la base de datos exista
+---
 
-### Error de Migraciones
-- Ejecutar `alembic current` para ver estado
-- Verificar que la base de datos esté accesible
-- Revisar logs de Alembic
+## 📄 Licencia
 
-### Error de Dependencias
-- Actualizar pip: `pip install --upgrade pip`
-- Reinstalar dependencias: `pip install -r requirements.txt --force-reinstall` 
+Este proyecto está licenciado bajo los términos de la licencia MIT. Consulta el archivo `LICENSE` para más info.
+
+---
+
+<div align="center">
+Hecho con ❤️ por el equipo *VeciRun*.
+</div> 
