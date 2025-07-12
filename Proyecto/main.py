@@ -853,7 +853,9 @@ class VeciRunApp:
         bikes_container = ft.GridView(
             runs_count=3,
             max_extent=150,
-            child_aspect_ratio=1.0,
+            # Adjust aspect ratio so grid cell height more closely matches card height,
+            # removing the extra space beneath each bike card
+            child_aspect_ratio=1.25,
             spacing=10,
             run_spacing=10,
             controls=bike_cards
@@ -862,6 +864,8 @@ class VeciRunApp:
         result_text = ft.Text("", color=ft.colors.GREEN)
         
         def register_loan(e):
+            # Ensure we reference the outer scoped variable where bike selection is stored
+            nonlocal selected_bike_code
             try:
                 # Validate required fields
                 if not all([
