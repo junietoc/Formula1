@@ -52,20 +52,13 @@ class HomeView(View):
             focused_border_color=ft.colors.BLUE_400,
         )
 
+        # Contenedor más compacto para la estación (solo el dropdown con una etiqueta en el
+        # propio control). Esto reduce altura y evita necesidad de "scroll" al cambiar de rol.
+        station_dropdown.label = "Estación Asignada (solo administradores)"
+
         station_container = ft.Container(
-            content=ft.Column(
-                [
-                    ft.Text("Estación Asignada", size=16, weight=ft.FontWeight.BOLD),
-                    ft.Text(
-                        "(Requerido para administradores)",
-                        size=12,
-                        color=ft.colors.GREY_600,
-                    ),
-                    ft.Container(height=10),
-                    station_dropdown,
-                ]
-            ),
-            padding=ft.padding.only(bottom=20),
+            content=station_dropdown,
+            padding=ft.padding.only(bottom=10),
             visible=False,
         )
 
@@ -179,29 +172,21 @@ class HomeView(View):
                             text_align=ft.TextAlign.CENTER,
                             color=ft.colors.GREY_600,
                         ),
-                        ft.Container(height=25),
+                        ft.Container(height=15),
+                        # Contenedor solo con el selector de rol, centrado.
                         ft.Container(
-                            content=ft.Column(
-                                [
-                                    ft.Text(
-                                        "Seleccione su rol",
-                                        size=16,
-                                        weight=ft.FontWeight.BOLD,
-                                    ),
-                                    ft.Container(height=10),
-                                    role_dropdown,
-                                ]
-                            ),
-                            padding=ft.padding.only(bottom=20),
+                            content=role_dropdown,
+                            padding=ft.padding.only(bottom=10),
+                            alignment=ft.alignment.center,
                         ),
-                        ft.Container(content=cedula_field, padding=ft.padding.only(bottom=20)),
+                        ft.Container(content=cedula_field, padding=ft.padding.only(bottom=10)),
                         station_container,
-                        ft.Container(content=sign_in_button, padding=ft.padding.only(top=20)),
-                        ft.Container(content=status_text, padding=ft.padding.only(top=15)),
+                        ft.Container(content=sign_in_button, padding=ft.padding.only(top=10)),
+                        ft.Container(content=status_text, padding=ft.padding.only(top=10)),
                     ],
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
-                padding=40,
+                padding=20,
                 width=450,
             ),
             elevation=8,
