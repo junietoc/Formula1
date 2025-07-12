@@ -25,5 +25,3 @@ jobs:
         run: black --check .
       - name: Run tests
         run: pytest -q 
-
-
