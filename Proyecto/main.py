@@ -1,4 +1,27 @@
 import flet as ft
+# ----------------------------------------------------
+# Integración opcional con *flet-material*             
+# ----------------------------------------------------
+try:
+    import flet_material as fm  # type: ignore
+
+    # Configurar un tema Material moderno
+    fm.Theme.set_theme(theme="blue")
+except ModuleNotFoundError:  # Entorno sin flet-material (p.ej. CI)
+    class _FMStub:  # noqa: D101
+        class Theme:  # noqa: D101
+            bgcolor = None
+
+            @staticmethod
+            def set_theme(*args, **kwargs):  # noqa: D401,D401
+                pass
+
+        class Buttons(ft.ElevatedButton):  # noqa: D101
+            def __init__(self, *_, title: str = "", **kw):
+                super().__init__(title or kw.pop("text", ""), **kw)
+
+    fm = _FMStub()  # type: ignore
+
 from database import get_db, create_tables
 from services import UserService, BicycleService, StationService, LoanService
 from models import (
@@ -37,6 +60,10 @@ class VeciRunApp:
         page.window_maximized = True
         page.window_resizable = True
         page.padding = 20
+
+        # Aplicar color de fondo del tema Material si existe
+        if getattr(fm.Theme, "bgcolor", None):
+            page.bgcolor = fm.Theme.bgcolor
 
         # Initialize database
         create_tables()
