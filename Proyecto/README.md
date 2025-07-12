@@ -58,17 +58,17 @@ git clone <repository-url>
 cd vecirun
 
 # 2. Ejecútalo todo con un solo comando ✨
-dev init
+python dev_init.py
 ```
 
-El asistente `dev init` se encarga de:
+El script `python dev_init.py` se encarga de:
 
 - Crear y activar un entorno virtual.
 - Instalar todas las dependencias.
 - Configurar la base de datos y aplicar migraciones.
 - Cargar datos de ejemplo para que pruebes la app al instante.
 
-> **Nota:** Si no tienes instalado el CLI `dev`, consulta la [documentación oficial](https://github.com/dev/cli) para añadirlo a tu sistema.
+> **Nota:** Asegúrate de tener las dependencias de **Python 3.11** instaladas en tu sistema (por ejemplo `python3-dev` en Linux) antes de ejecutar el script.
 
 ---
 
