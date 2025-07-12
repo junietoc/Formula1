@@ -25,119 +25,123 @@ class ReturnView(View):
         self.app = app
 
     def build(self) -> ft.Control:  # noqa: D401
+        """Construye la vista de devoluciones basadas en la estación del administrador.
+
+        El formulario antiguo se ha eliminado. Ahora se muestran todos los
+        préstamos *abiertos* cuyo campo ``station_in`` ya apunta a la estación
+        asignada al administrador en sesión. El operador simplemente pulsa
+        "Registrar devolución" en la fila correspondiente y el préstamo se
+        cierra al instante.
+        """
         page = self.app.page
         db = self.app.db
 
         # ------------------------------------------------------------------
-        # Campos del formulario
+        # Validación de contexto: se requiere estación asignada
         # ------------------------------------------------------------------
-        FIELD_WIDTH = 450
+        station_code: str | None = getattr(self.app, "current_user_station", None)
+        if not station_code:
+            return ft.Text(
+                "Error: No se ha asignado ninguna estación al administrador.",
+                color=ft.colors.RED,
+                size=16,
+            )
 
-        user_cedula = ft.TextField(
-            label="Cédula del Usuario",
-            hint_text="Ingrese la cédula del usuario",
-            width=FIELD_WIDTH,
-            prefix_icon=ft.icons.BADGE,
+        station = StationService.get_station_by_code(db, station_code)
+        if not station:
+            return ft.Text(
+                f"Error: Estación desconocida: {station_code}",
+                color=ft.colors.RED,
+                size=16,
+            )
+
+        # ------------------------------------------------------------------
+        # Consultar préstamos abiertos previstos para esta estación
+        # ------------------------------------------------------------------
+        from models import LoanStatusEnum, Loan  # import local para evitar ciclos
+
+        open_loans: list[Loan] = (
+            db.query(Loan)
+            .filter(
+                Loan.status == LoanStatusEnum.abierto,
+                Loan.station_in_id == station.id,
+            )
+            .all()
         )
 
-        station_dropdown = ft.Dropdown(
-            label="Estación de Devolución",
-            width=FIELD_WIDTH,
-            options=[
-                ft.dropdown.Option("EST001", "EST001 - Calle 26"),
-                ft.dropdown.Option("EST002", "EST002 - Salida al Uriel Gutiérrez"),
-                ft.dropdown.Option("EST003", "EST003 - Calle 53"),
-                ft.dropdown.Option("EST004", "EST004 - Calle 45"),
-                ft.dropdown.Option("EST005", "EST005 - Edificio Ciencia y Tecnología"),
-            ],
-            prefix_icon=ft.icons.LOCATION_ON,
-            dense=True,
-        )
+        if not open_loans:
+            return ft.Column(
+                [
+                    ft.Text(
+                        f"No hay devoluciones pendientes para la estación {station.code} - {station.name}.",
+                        size=18,
+                        color=ft.colors.GREY_700,
+                    )
+                ]
+            )
 
-        result_text = ft.Text("", color=ft.colors.GREEN)
+        # ------------------------------------------------------------------
+        # Helper para mostrar mensajes de resultado
+        # ------------------------------------------------------------------
+        result_text = ft.Text("")
 
-        def _register(_: ft.ControlEvent) -> None:  # noqa: D401
-            if not all([user_cedula.value, station_dropdown.value]):
-                _set_result("Todos los campos son obligatorios", ft.colors.RED)
-                return
-
-            open_loans = LoanService.get_open_loans_by_user_cedula(db, user_cedula.value)
-            if not open_loans:
-                _set_result(
-                    "No se encontraron préstamos abiertos para este usuario",
-                    ft.colors.RED,
-                )
-                return
-            loan = open_loans[0]
-            station = StationService.get_station_by_code(db, station_dropdown.value)
-            if not station:
-                _set_result("Estación no encontrada", ft.colors.RED)
-                return
-
-            LoanService.return_loan(db, loan_id=loan.id, station_in_id=station.id)
-            _set_result("Devolución registrada exitosamente", ft.colors.GREEN)
-            user_cedula.value = ""
-            station_dropdown.value = None
-            page.update()
-            _update_save_button()
-
-        def _set_result(msg: str, color: str) -> None:
+        def _set_result(msg: str, color: str):
             result_text.value = msg
             result_text.color = color
-
-        # ------------------------------------------------------------------
-        # Botón estilizado (usa flet-material si está disponible)
-        # ------------------------------------------------------------------
-
-        save_btn = fm.Buttons(
-            title="Registrar Devolución",
-            on_click=_register,
-            icon=ft.icons.ASSIGNMENT_RETURN,
-            width=240,
-            height=48,
-        )
-
-        # Deshabilitado hasta que el formulario esté completo
-        save_btn.disabled = True
-        save_btn.style = ft.ButtonStyle(color=ft.colors.WHITE, bgcolor=ft.colors.GREY_400)
-
-        # ---------------------------------------
-        # Helper para habilitar / deshabilitar botón
-        # ---------------------------------------
-
-        def _update_save_button(_: ft.ControlEvent | None = None) -> None:  # noqa: D401
-            complete = bool(user_cedula.value and station_dropdown.value)
-            save_btn.disabled = not complete
-            save_btn.style = ft.ButtonStyle(
-                color=ft.colors.WHITE,
-                bgcolor=ft.colors.GREEN if complete else ft.colors.GREY_400,
-            )
             page.update()
 
-        # Vincular cambios para habilitar boton
-        user_cedula.on_change = _update_save_button
-        station_dropdown.on_change = _update_save_button
+        # ------------------------------------------------------------------
+        # Generar las filas de préstamos
+        # ------------------------------------------------------------------
+        loan_rows: list[ft.Control] = []
 
-        # Agrupar controles en un *Card* para mejor estética
-        form_controls = ft.Column(
-            [user_cedula, station_dropdown, ft.Container(height=10), save_btn],
-            spacing=10,
-        )
+        def _make_return_handler(loan_id):
+            def _handler(_: ft.ControlEvent):
+                try:
+                    LoanService.return_loan(db, loan_id=loan_id, station_in_id=station.id)
+                    _set_result("Devolución registrada exitosamente", ft.colors.GREEN)
+                    # Recargar la vista para reflejar los cambios
+                    self.app.show_return_view()
+                except Exception as exc:  # noqa: BLE001
+                    _set_result(str(exc), ft.colors.RED)
 
+            return _handler
+
+        for loan in open_loans:
+            user_label = f"{loan.user.full_name} (CC {loan.user.cedula})"
+            bike_label = loan.bike.bike_code
+            date_label = loan.time_out.strftime("%d/%m/%Y %H:%M") if loan.time_out else "-"
+
+            tile = ft.ListTile(
+                leading=ft.Icon(ft.icons.DIRECTIONS_BIKE),
+                title=ft.Text(f"Bicicleta: {bike_label}"),
+                subtitle=ft.Text(f"Usuario: {user_label} | Salida: {date_label}"),
+                trailing=fm.Buttons(
+                    title="Registrar devolución",
+                    icon=ft.icons.CHECK,
+                    on_click=_make_return_handler(loan.id),
+                    width=180,
+                    height=40,
+                ),
+            )
+            loan_rows.append(tile)
+
+        # ------------------------------------------------------------------
+        # Layout final
+        # ------------------------------------------------------------------
         return ft.Column(
             [
                 ft.Text(
-                    "Registrar Devolución de Bicicleta",
+                    f"Devoluciones pendientes – Estación {station.code} - {station.name}",
                     size=24,
                     weight=ft.FontWeight.BOLD,
                 ),
                 ft.Divider(),
-                ft.Card(
-                    content=ft.Container(content=form_controls, padding=15, width=FIELD_WIDTH + 40),
-                ),
+                ft.Column(loan_rows, spacing=5, scroll=ft.ScrollMode.AUTO, expand=True),
                 ft.Container(height=20),
                 result_text,
             ],
+            expand=True,
             scroll=ft.ScrollMode.AUTO,
             spacing=10,
         )
