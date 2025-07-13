@@ -103,8 +103,13 @@ def run_migrations() -> None:
         create_tables()
         return
 
+    # Ejecutamos Alembic usando el intérprete actual (``PY_CMD``) para evitar
+    # problemas con la variable *PATH* en Windows donde el ejecutable
+    # ``alembic`` puede no estar disponible. De esta forma garantizamos que la
+    # CLI se lance con el mismo entorno virtual en el que se instalaron las
+    # dependencias.
     try:
-        run("alembic upgrade head", cwd=ROOT_DIR)
+        run(f'"{PY_CMD}" -m alembic upgrade head', cwd=ROOT_DIR)
     except subprocess.CalledProcessError as exc:
         sys.exit(f"❌ Falló la migración: {exc}")
 
