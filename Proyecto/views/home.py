@@ -150,10 +150,10 @@ class HomeView(View):
                         ft.Container(
                             content=ft.Row(
                                 [
-                                    ft.Icon(
-                                        ft.icons.DIRECTIONS_BIKE,
-                                        size=40,
-                                        color=ft.colors.BLUE,
+                                    ft.Image(
+                                        src="vecirunlogo.png",
+                                        width=40,
+                                        height=40,
                                     ),
                                     ft.Text(
                                         "VeciRun",

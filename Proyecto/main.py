@@ -63,6 +63,14 @@ class VeciRunApp:
         page.window_resizable = True
         page.padding = 20
 
+        # Set application window icon (supported on newer Flet desktop builds)
+        try:
+            if hasattr(page, "window") and hasattr(page.window, "icon"):
+                page.window.icon = "vecirunlogo.png"
+        except Exception:
+            # Gracefully skip if the current platform or Flet version does not support it
+            pass
+
         # Aplicar color de fondo del tema Material si existe
         if getattr(fm.Theme, "bgcolor", None):
             page.bgcolor = fm.Theme.bgcolor
