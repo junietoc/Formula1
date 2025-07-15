@@ -210,6 +210,15 @@ class LoanView(View):
             if not user:
                 _set_result("Usuario no encontrado", ft.colors.RED)
                 return
+
+            # ==============================
+            # NUEVA VALIDACIÓN:
+            # ==============================
+            open_loans = LoanService.get_open_loans_by_user(db, user.id)
+            if open_loans:
+                _set_result("El usuario ya tiene un préstamo activo y no puede registrar otro.", ft.colors.RED)
+                return
+
             bike = BicycleService.get_bicycle_by_code(db, selected_bike["code"])
             if not bike:
                 _set_result("Bicicleta no encontrada", ft.colors.RED)
