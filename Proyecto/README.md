@@ -68,7 +68,6 @@ El asistente `dev init` se encarga de:
 - Configurar la base de datos y aplicar migraciones.
 - Cargar datos de ejemplo para que pruebes la app al instante.
 
-> **Nota:** Si no tienes instalado el CLI `dev`, consulta la [documentación oficial](https://github.com/dev/cli) para añadirlo a tu sistema.
 
 ---
 
