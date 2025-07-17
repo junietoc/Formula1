@@ -115,15 +115,46 @@ class ReturnView(View):
 
             return _handler
 
+
+        from datetime import datetime
+        try:
+            from zoneinfo import ZoneInfo
+            CO_TZ = ZoneInfo("America/Bogota")
+        except ImportError:
+            CO_TZ = None  # Fallback: naive datetime
+        ALERT_MINUTES = 15
+
+        now = datetime.now(CO_TZ) if CO_TZ else datetime.now()
+
         for loan in open_loans:
             user_label = f"{loan.user.full_name} (CC {loan.user.cedula})"
             bike_label = loan.bike.bike_code
             date_label = loan.time_out.strftime("%d/%m/%Y %H:%M") if loan.time_out else "-"
 
+            # Calcular minutos transcurridos
+            minutes_elapsed = None
+            is_late = False
+            if loan.time_out:
+                # Asegura que ambos datetime sean aware o naive
+                loan_time = loan.time_out
+                if CO_TZ and loan_time.tzinfo is None:
+                    loan_time = loan_time.replace(tzinfo=CO_TZ)
+                elif not CO_TZ and loan_time.tzinfo is not None:
+                    loan_time = loan_time.replace(tzinfo=None)
+                minutes_elapsed = int((now - loan_time).total_seconds() // 60)
+                is_late = minutes_elapsed > ALERT_MINUTES
+
+            # Alerta visual si es tardío
+            tile_bg = ft.colors.RED_100 if is_late else None
+            alert_icon = ft.Icon(ft.icons.WARNING, color=ft.colors.RED, tooltip=f"¡Préstamo tardío! Tiempo transcurrido: {minutes_elapsed} min. (máx. {ALERT_MINUTES} min)") if is_late else None
+
             tile = ft.ListTile(
-                leading=ft.Icon(ft.icons.DIRECTIONS_BIKE),
+                leading=ft.Row([
+                    ft.Icon(ft.icons.DIRECTIONS_BIKE),
+                    alert_icon
+                ] if alert_icon else [ft.Icon(ft.icons.DIRECTIONS_BIKE)]),
                 title=ft.Text(f"Bicicleta: {bike_label}"),
-                subtitle=ft.Text(f"Usuario: {user_label} | Salida: {date_label}"),
+                subtitle=ft.Text(f"Usuario: {user_label} | Salida: {date_label}" + (f" | {minutes_elapsed} min" if minutes_elapsed is not None else "")),
                 trailing=fm.Buttons(
                     title="Registrar devolución",
                     icon=ft.icons.CHECK,
@@ -131,6 +162,7 @@ class ReturnView(View):
                     width=180,
                     height=40,
                 ),
+                bgcolor=tile_bg,
             )
             loan_rows.append(tile)
 
