@@ -165,3 +165,24 @@ class LoanService:
             .filter(User.cedula == cedula, Loan.status == LoanStatusEnum.abierto)
             .all()
         )
+
+    @staticmethod
+    def get_loan_history_by_cedula(db: Session, cedula: str) -> list[Loan]:
+        """Get all loans (open and closed) for a user by cedula, ordered by time_out descending"""
+        return (
+            db.query(Loan)
+            .join(User, Loan.user_id == User.id)
+            .filter(User.cedula == cedula)
+            .order_by(Loan.time_out.desc())
+            .all()
+        )
+
+    @staticmethod
+    def get_loans_by_user(db: Session, user_id: uuid.UUID) -> list[Loan]:
+        """Get all loans for a user by user_id, ordered by time_out descending"""
+        return (
+            db.query(Loan)
+            .filter(Loan.user_id == user_id)
+            .order_by(Loan.time_out.desc())
+            .all()
+        )
