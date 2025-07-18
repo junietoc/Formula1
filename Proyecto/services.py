@@ -204,3 +204,109 @@ class LoanService:
             .order_by(Loan.time_out.desc())
             .all()
         )
+
+
+class FavoriteBikeService:
+    @staticmethod
+    def get_user_favorite_bike(db: Session, user_id: uuid.UUID) -> Bicycle | None:
+        """Get the favorite bike for a user"""
+        user = db.query(User).filter(User.id == user_id).first()
+        return user.favorite_bike if user else None
+
+    @staticmethod
+    def get_user_favorite_bike_by_cedula(db: Session, cedula: str) -> Bicycle | None:
+        """Get the favorite bike for a user by cedula"""
+        user = UserService.get_user_by_cedula(db, cedula)
+        return user.favorite_bike if user else None
+
+    @staticmethod
+    def get_bikes_used_by_user(db: Session, user_id: uuid.UUID) -> list[Bicycle]:
+        """Get all bikes that a user has used in their loan history"""
+        loans = LoanService.get_loans_by_user(db, user_id)
+        used_bikes = []
+        seen_bikes = set()
+        
+        for loan in loans:
+            if loan.bike and loan.bike.id not in seen_bikes:
+                used_bikes.append(loan.bike)
+                seen_bikes.add(loan.bike.id)
+        
+        return used_bikes
+
+    @staticmethod
+    def get_bikes_used_by_user_cedula(db: Session, cedula: str) -> list[Bicycle]:
+        """Get all bikes that a user has used in their loan history by cedula"""
+        loans = LoanService.get_loan_history_by_cedula(db, cedula)
+        used_bikes = []
+        seen_bikes = set()
+        
+        for loan in loans:
+            if loan.bike and loan.bike.id not in seen_bikes:
+                used_bikes.append(loan.bike)
+                seen_bikes.add(loan.bike.id)
+        
+        return used_bikes
+
+    @staticmethod
+    def set_favorite_bike(db: Session, user_id: uuid.UUID, bike_id: uuid.UUID) -> bool:
+        """Set a bike as favorite for a user"""
+        # Check if the bike is already someone else's favorite
+        existing_favorite = db.query(User).filter(User.favorite_bike_id == bike_id).first()
+        if existing_favorite and existing_favorite.id != user_id:
+            return False  # Bike is already someone else's favorite
+        
+        # Check if user has used this bike before
+        user_loans = LoanService.get_loans_by_user(db, user_id)
+        user_has_used_bike = any(loan.bike_id == bike_id for loan in user_loans)
+        
+        if not user_has_used_bike:
+            return False  # User hasn't used this bike
+        
+        # Set the favorite bike
+        user = db.query(User).filter(User.id == user_id).first()
+        if user:
+            user.favorite_bike_id = bike_id
+            db.commit()
+            db.refresh(user)
+            return True
+        
+        return False
+
+    @staticmethod
+    def set_favorite_bike_by_cedula(db: Session, cedula: str, bike_id: uuid.UUID) -> bool:
+        """Set a bike as favorite for a user by cedula"""
+        user = UserService.get_user_by_cedula(db, cedula)
+        if not user:
+            return False
+        
+        return FavoriteBikeService.set_favorite_bike(db, user.id, bike_id)
+
+    @staticmethod
+    def remove_favorite_bike(db: Session, user_id: uuid.UUID) -> bool:
+        """Remove the favorite bike for a user"""
+        user = db.query(User).filter(User.id == user_id).first()
+        if user:
+            user.favorite_bike_id = None
+            db.commit()
+            db.refresh(user)
+            return True
+        return False
+
+    @staticmethod
+    def remove_favorite_bike_by_cedula(db: Session, cedula: str) -> bool:
+        """Remove the favorite bike for a user by cedula"""
+        user = UserService.get_user_by_cedula(db, cedula)
+        if not user:
+            return False
+        
+        return FavoriteBikeService.remove_favorite_bike(db, user.id)
+
+    @staticmethod
+    def get_favorite_bike_owner(db: Session, bike_id: uuid.UUID) -> User | None:
+        """Get the user who has this bike as favorite"""
+        return db.query(User).filter(User.favorite_bike_id == bike_id).first()
+
+    @staticmethod
+    def is_bike_favorite(db: Session, bike_id: uuid.UUID) -> bool:
+        """Check if a bike is someone's favorite"""
+        return db.query(User).filter(User.favorite_bike_id == bike_id).first() is not None
