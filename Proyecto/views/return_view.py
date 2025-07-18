@@ -109,22 +109,20 @@ class ReturnView(View):
                     LoanService.return_loan(db, loan_id=loan_id, station_in_id=station.id)
                     _set_result("Devolución registrada exitosamente", ft.colors.GREEN)
                     # Recargar la vista para reflejar los cambios
-                    self.app.show_return_view()
+                    self.app.content_area.content = ReturnView(self.app).build()
+                    self.app.page.update()
                 except Exception as exc:  # noqa: BLE001
                     _set_result(str(exc), ft.colors.RED)
 
             return _handler
 
 
-        from datetime import datetime
-        try:
-            from zoneinfo import ZoneInfo
-            CO_TZ = ZoneInfo("America/Bogota")
-        except ImportError:
-            CO_TZ = None  # Fallback: naive datetime
+        from datetime import datetime, timezone, timedelta
+        # Zona horaria de Colombia (UTC-5)
+        CO_TZ = timezone(timedelta(hours=-5))
         ALERT_MINUTES = 15
 
-        now = datetime.now(CO_TZ) if CO_TZ else datetime.now()
+        now = datetime.now(CO_TZ)
 
         for loan in open_loans:
             user_label = f"{loan.user.full_name} (CC {loan.user.cedula})"
@@ -135,12 +133,10 @@ class ReturnView(View):
             minutes_elapsed = None
             is_late = False
             if loan.time_out:
-                # Asegura que ambos datetime sean aware o naive
+                # Asegura que ambos datetime sean aware
                 loan_time = loan.time_out
-                if CO_TZ and loan_time.tzinfo is None:
+                if loan_time.tzinfo is None:
                     loan_time = loan_time.replace(tzinfo=CO_TZ)
-                elif not CO_TZ and loan_time.tzinfo is not None:
-                    loan_time = loan_time.replace(tzinfo=None)
                 minutes_elapsed = int((now - loan_time).total_seconds() // 60)
                 is_late = minutes_elapsed > ALERT_MINUTES
 
@@ -148,21 +144,46 @@ class ReturnView(View):
             tile_bg = ft.colors.RED_100 if is_late else None
             alert_icon = ft.Icon(ft.icons.WARNING, color=ft.colors.RED, tooltip=f"¡Préstamo tardío! Tiempo transcurrido: {minutes_elapsed} min. (máx. {ALERT_MINUTES} min)") if is_late else None
 
-            tile = ft.ListTile(
-                leading=ft.Row([
-                    ft.Icon(ft.icons.DIRECTIONS_BIKE),
-                    alert_icon
-                ] if alert_icon else [ft.Icon(ft.icons.DIRECTIONS_BIKE)]),
-                title=ft.Text(f"Bicicleta: {bike_label}"),
-                subtitle=ft.Text(f"Usuario: {user_label} | Salida: {date_label}" + (f" | {minutes_elapsed} min" if minutes_elapsed is not None else "")),
-                trailing=fm.Buttons(
-                    title="Registrar devolución",
-                    icon=ft.icons.CHECK,
-                    on_click=_make_return_handler(loan.id),
-                    width=180,
-                    height=40,
+            # Crear una tarjeta más simple y robusta
+            tile = ft.Card(
+                content=ft.Container(
+                    content=ft.Column([
+                        ft.Row([
+                            ft.Icon(ft.icons.DIRECTIONS_BIKE, color=ft.colors.BLUE),
+                            ft.Text(f"Bicicleta: {bike_label}", 
+                                   weight=ft.FontWeight.BOLD, size=16),
+                            ft.Container(expand=True),
+                            alert_icon if alert_icon else ft.Container(),
+                        ]),
+                        ft.Divider(),
+                        ft.Row([
+                            ft.Column([
+                                ft.Text("Usuario:", weight=ft.FontWeight.BOLD),
+                                ft.Text(user_label),
+                            ], expand=True),
+                            ft.Column([
+                                ft.Text("Fecha de salida:", weight=ft.FontWeight.BOLD),
+                                ft.Text(date_label),
+                            ], expand=True),
+                            ft.Column([
+                                ft.Text("Tiempo transcurrido:", weight=ft.FontWeight.BOLD),
+                                ft.Text(f"{minutes_elapsed} min" if minutes_elapsed is not None else "N/A"),
+                            ], expand=True),
+                            ft.Column([
+                                ft.ElevatedButton(
+                                    text="Registrar devolución",
+                                    icon=ft.icons.CHECK,
+                                    on_click=_make_return_handler(loan.id),
+                                    width=180,
+                                    height=40,
+                                ),
+                            ]),
+                        ]),
+                    ]),
+                    padding=ft.padding.all(16),
+                    bgcolor=tile_bg,
                 ),
-                bgcolor=tile_bg,
+                margin=ft.margin.only(bottom=10),
             )
             loan_rows.append(tile)
 

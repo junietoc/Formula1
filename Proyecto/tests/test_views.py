@@ -110,6 +110,10 @@ def mock_app():
             self.nav_rail = MockNavRail()
             self.content_area = type('', (), {'content': None})()
             self.page = MockPage()
+            
+        def clear_user_state(self):
+            """Mock method for clearing user state"""
+            pass
 
     return MockApp()
 

@@ -196,13 +196,10 @@ class DashboardView(View):
 
         # Botón logout
         def _logout(_: ft.ControlEvent) -> None:  # noqa: D401
-            if hasattr(self.app, "current_user_role"):
-                delattr(self.app, "current_user_role")
-            if hasattr(self.app, "current_user_station"):
-                delattr(self.app, "current_user_station")
-
-            self.app.nav_rail.destinations = []
-            self.app.nav_rail.selected_index = 0
+            # Limpiar estado del usuario
+            self.app.clear_user_state()
+            
+            # Ocultar navegación y mostrar pantalla de login
             self.app.nav_rail.visible = False
             self.app.content_area.content = HomeView(self.app).build()
             page.update()

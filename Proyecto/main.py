@@ -43,6 +43,7 @@ from views.loan import LoanView
 # Added view to display current open loan for regular users
 from views.return_view import ReturnView
 from views.current_loan import CurrentLoanView
+from views.loan_history import LoanHistoryView
 from typing import Callable, Dict
 
 # noqa: F401 needed for typing
@@ -161,10 +162,16 @@ class VeciRunApp:
                     selected_icon=ft.icons.ASSIGNMENT_RETURN,
                     label="Devolución",
                 ),
+                ft.NavigationRailDestination(
+                    icon=ft.icons.HISTORY,
+                    selected_icon=ft.icons.HISTORY,
+                    label="Historial",
+                ),
             ]
             self.view_registry[1] = lambda: CreateUserView(self)
             self.view_registry[2] = lambda: LoanView(self)
             self.view_registry[3] = lambda: ReturnView(self)
+            self.view_registry[4] = lambda: LoanHistoryView(self)
         else:  # regular
             destinations += [
                 ft.NavigationRailDestination(
@@ -218,6 +225,25 @@ class VeciRunApp:
     def show_return_view(self):
         self.content_area.content = ReturnView(self).build()
         self.page.update()
+
+    def clear_user_state(self):
+        """Clear user-specific state when switching users"""
+        # Clear any user-specific attributes
+        if hasattr(self, 'current_user_station'):
+            delattr(self, 'current_user_station')
+        
+        # Clear current user and role
+        self.current_user = None
+        if hasattr(self, 'current_user_role'):
+            delattr(self, 'current_user_role')
+        
+        # Reset navigation to home only if nav_rail exists
+        if hasattr(self, 'nav_rail') and self.nav_rail:
+            self.nav_rail.selected_index = 0
+            if hasattr(self, 'content_area') and self.content_area:
+                self.content_area.content = DashboardView(self).build()
+                if hasattr(self, 'page') and self.page:
+                    self.page.update()
 
     def create_sample_data(self):
         """Create sample data for testing"""

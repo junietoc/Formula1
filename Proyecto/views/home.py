@@ -97,6 +97,9 @@ class HomeView(View):
                 )
                 return
 
+            # Limpiar estado anterior antes de asignar el nuevo
+            self.app.clear_user_state()
+            
             if role_dropdown.value == "regular":
                 if not cedula_field.value:
                     _set_status("Por favor ingrese su cédula", ft.colors.RED)
@@ -106,7 +109,7 @@ class HomeView(View):
                     _set_status("Usuario no encontrado o rol inválido", ft.colors.RED)
                     return
                 self.app.current_user = user
-
+            
             # Guardar estado global
             self.app.current_user_role = role_dropdown.value
             self.app.current_user_station = (
