@@ -12,6 +12,7 @@ from models import (
 from datetime import datetime
 import uuid
 from datetime import timezone, timedelta
+from sqlalchemy import or_
 
 # Zona horaria de Colombia (UTC-5)
 CO_TZ = timezone(timedelta(hours=-5))
@@ -183,6 +184,23 @@ class LoanService:
         return (
             db.query(Loan)
             .filter(Loan.user_id == user_id)
+            .order_by(Loan.time_out.desc())
+            .all()
+        )
+
+    @staticmethod
+    def get_all_loans(db: Session) -> list[Loan]:
+        """Get all loans ordered by latest time_out first"""
+        return db.query(Loan).order_by(Loan.time_out.desc()).all()
+
+    @staticmethod
+    def get_loans_by_station_code(db: Session, station_code: str) -> list[Loan]:
+        """Get all loans (out or in) associated with a station code, ordered by latest"""
+        # Filter loans where either the outgoing or incoming station matches the code
+        return (
+            db.query(Loan)
+            .join(Station, or_(Loan.station_out_id == Station.id, Loan.station_in_id == Station.id))
+            .filter(Station.code == station_code)
             .order_by(Loan.time_out.desc())
             .all()
         )

@@ -29,67 +29,143 @@ class LoanHistoryView(View):
             hint_text="Ingrese la cédula del usuario",
             width=300,
             border_color=ft.colors.BLUE_400,
+            on_change=self.search_history,  # Real-time search on each keystroke
+            on_submit=self.search_history,  # Trigger search on Enter key press
+            suffix=ft.IconButton(
+                icon=ft.icons.CLEAR,
+                on_click=self.clear_search,
+                tooltip="Borrar búsqueda",
+            ),
         )
         self.search_button = ft.ElevatedButton(
             text="Buscar Historial",
             icon=ft.icons.SEARCH,
             on_click=self.search_history,
         )
-        self.results_container = ft.Container(
-            content=ft.Text("Ingrese una cédula para buscar el historial", 
-                           color=ft.colors.GREY_600, size=16),
-            padding=20,
-            expand=True,
-        )
+        # Placeholder; we'll update with real data after fetching loans
+        self.results_container = ft.Container(padding=20)
+
         self.user_info = ft.Text("", size=16, weight=ft.FontWeight.BOLD, color=ft.colors.BLUE_700)
+
+        # ---------------------------------------------------------
+        # Pre-load loans for the current admin station (or all)
+        # ---------------------------------------------------------
+        db = self.app.db
+        self.station_code: str | None = getattr(self.app, "current_user_station", None)
+
+        if self.station_code:
+            self.all_loans = LoanService.get_loans_by_station_code(db, self.station_code)
+        else:
+            # Fallback to every loan in the system (e.g., when no station assigned)
+            self.all_loans = LoanService.get_all_loans(db)
+
+        # Initialize pagination
+        self.filtered_loans = self.all_loans
+        self.page_size = 5
+        self.current_page = 1
+        self.max_pages = max(1, (len(self.filtered_loans) + self.page_size - 1) // self.page_size)
+
+        # Populate initial page of loans
+        if self.filtered_loans:
+            self.update_results()
+        else:
+            self.results_container.content = ft.Text(
+                "No hay préstamos registrados para este punto", color=ft.colors.GREY_600, size=16
+            )
 
     def search_history(self, e):
         """Search for loan history by cedula"""
-        cedula = self.cedula_input.value.strip()
-        if not cedula:
-            self.results_container.content = ft.Text(
-                "Por favor ingrese una cédula válida",
-                color=ft.colors.RED_400,
-                size=16
-            )
-            self.app.page.update()
-            return
+        query = self.cedula_input.value.strip()
 
-        db = self.app.db
-        
-        # First check if user exists
-        user = UserService.get_user_by_cedula(db, cedula)
-        if not user:
+        if not query:
+            # Reset: show all loans
             self.user_info.value = ""
-            self.results_container.content = ft.Text(
-                f"No se encontró ningún usuario con la cédula {cedula}",
-                color=ft.colors.RED_400,
-                size=16
-            )
-            self.app.page.update()
-            return
-
-        # Get loan history
-        loans = LoanService.get_loan_history_by_cedula(db, cedula)
-        
-        # Update user info
-        self.user_info.value = f"Usuario: {user.full_name} - Cédula: {user.cedula}"
-        
-        if not loans:
-            self.results_container.content = ft.Text(
-                f"El usuario {user.full_name} no tiene historial de préstamos",
-                color=ft.colors.GREY_600,
-                size=16
-            )
+            self.filtered_loans = self.all_loans
         else:
-            self.results_container.content = self.build_loan_history_list(loans)
-        
+            # Filter loans by cedula substring (case-insensitive)
+            self.filtered_loans = [ln for ln in self.all_loans if ln.user and query.lower() in ln.user.cedula.lower()]
+
+            if self.filtered_loans:
+                user = self.filtered_loans[0].user
+                self.user_info.value = f"Usuario: {user.full_name} - Cédula: {user.cedula}"
+            else:
+                self.user_info.value = ""
+
+        # Reset to first page and recalculate
+        self.current_page = 1
+        self.max_pages = max(1, (len(self.filtered_loans) + self.page_size - 1) // self.page_size)
+
+        if not self.filtered_loans:
+            self.results_container.content = ft.Text(
+                "No se encontró ningún préstamo para los criterios dados",
+                color=ft.colors.GREY_600,
+                size=16,
+            )
+            try:
+                self.app.page.scroll_to(self.results_container)
+            except Exception:
+                pass
+            self.app.page.update()
+        else:
+            self.update_results()
+
+    def clear_search(self, e):
+        """Clear the search field and show all loans"""
+        # Clear input and perform a fresh search (resets pagination)
+        self.cedula_input.value = ""
+        self.search_history(e)
+
+    def update_results(self):
+        """Update results container based on current page and filtered loans"""
+        start = (self.current_page - 1) * self.page_size
+        end = start + self.page_size
+        page_loans = self.filtered_loans[start:end]
+
+        # Build the current page list
+        slice_list = self.build_loan_history_list(page_loans)
+
+        # Pagination controls
+        pagination = ft.Row([
+            ft.IconButton(
+                icon=ft.icons.CHEVRON_LEFT,
+                disabled=self.current_page == 1,
+                on_click=self.prev_page,
+            ),
+            ft.Text(f"Página {self.current_page}/{self.max_pages}", weight=ft.FontWeight.BOLD),
+            ft.IconButton(
+                icon=ft.icons.CHEVRON_RIGHT,
+                disabled=self.current_page == self.max_pages,
+                on_click=self.next_page,
+            ),
+        ], alignment=ft.MainAxisAlignment.CENTER)
+
+        # Combine list and controls
+        self.results_container.content = ft.Column([slice_list, pagination], spacing=10)
+
+        # Scroll to top of results
+        try:
+            self.app.page.scroll_to(self.results_container)
+        except Exception:
+            pass
+
         self.app.page.update()
+
+    def prev_page(self, e):
+        """Go to previous page of results"""
+        if self.current_page > 1:
+            self.current_page -= 1
+            self.update_results()
+
+    def next_page(self, e):
+        """Go to next page of results"""
+        if self.current_page < self.max_pages:
+            self.current_page += 1
+            self.update_results()
 
     def build_loan_history_list(self, loans: list) -> ft.Control:
         """Build the loan history list view"""
-        loan_cards = []
-        
+        loan_cards: list[ft.Control] = []
+
         for loan in loans:
             # Get basic loan info
             bike_code = loan.bike.bike_code if loan.bike else "N/A"
@@ -119,6 +195,10 @@ class LoanHistoryView(View):
             status_color = status_colors.get(loan.status, ft.colors.GREY)
             status_text = loan.status.value.title()
             
+            # Get user info
+            user_name = loan.user.full_name if loan.user else "N/A"
+            user_cedula = loan.user.cedula if loan.user else "N/A"
+            
             # Create card for each loan
             card = ft.Card(
                 content=ft.Container(
@@ -134,6 +214,10 @@ class LoanHistoryView(View):
                                 padding=ft.padding.all(8),
                                 border_radius=ft.border_radius.all(12),
                             )
+                        ]),
+                        ft.Row([
+                            ft.Text(f"Usuario: {user_name} - Cédula: {user_cedula}", 
+                                   weight=ft.FontWeight.BOLD, size=14),
                         ]),
                         ft.Divider(),
                         ft.Row([
@@ -167,16 +251,29 @@ class LoanHistoryView(View):
             )
             loan_cards.append(card)
         
-        return ft.Column([
-            ft.Text(f"Total de préstamos: {len(loans)}", 
-                   weight=ft.FontWeight.BOLD, size=18, color=ft.colors.BLUE_700),
-            ft.Divider(),
-            ft.Column(
-                loan_cards,
-                scroll=ft.ScrollMode.AUTO,
-                expand=True,
-            )
-        ], expand=True, scroll=ft.ScrollMode.AUTO)
+        # Calculate pagination header values
+        start = (self.current_page - 1) * self.page_size + 1
+        end = start + len(loans) - 1
+        total = len(self.filtered_loans)
+
+        return ft.Column(
+            [
+                ft.Text(
+                    f"Total de préstamos: {total}",
+                    weight=ft.FontWeight.BOLD,
+                    size=18,
+                    color=ft.colors.BLUE_700,
+                ),
+                ft.Text(
+                    f"Mostrando {start} - {end}",
+                    size=16,
+                    color=ft.colors.GREY_600,
+                ),
+                ft.Divider(),
+                ft.Column(loan_cards, spacing=10),
+            ],
+            spacing=10,
+        )
 
     def build(self) -> ft.Control:
         """Build the loan history view"""
