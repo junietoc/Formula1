@@ -19,12 +19,12 @@ from models import (
 )
 
 # ---------------------------------------------------------------------------
-# Lightweight stub to capture the *on_click* callback of fm.Buttons
+# Lightweight stub to capture the *on_click* callback of ft.ElevatedButton
 # ---------------------------------------------------------------------------
 
 
 class _DummyButton:  # pragma: no cover – helpers only
-    """Replacement for *fm.Buttons* that stores the callback provided."""
+    """Replacement for *ft.ElevatedButton* that stores the callback provided."""
 
     last_callback = None  # type: ignore
 
@@ -34,11 +34,13 @@ class _DummyButton:  # pragma: no cover – helpers only
 
 
 # ---------------------------------------------------------------------------
-# Import the module and patch its *fm.Buttons* BEFORE using ReturnView
+# Import the module and patch its *ft.ElevatedButton* BEFORE using ReturnView
 # ---------------------------------------------------------------------------
 
 rv_module = importlib.import_module("views.return_view")
-rv_module.fm.Buttons = _DummyButton  # type: ignore
+# Patch ft.ElevatedButton to capture callbacks
+original_elevated_button = ft.ElevatedButton
+ft.ElevatedButton = _DummyButton  # type: ignore
 ReturnView = rv_module.ReturnView  # convenience alias
 
 # ---------------------------------------------------------------------------
