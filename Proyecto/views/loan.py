@@ -20,6 +20,7 @@ from services import (
     BicycleService,
     StationService,
     LoanService,
+    FavoriteBikeService,
 )
 
 from .base import View
@@ -148,29 +149,53 @@ class LoanView(View):
         CARD_W, CARD_H = 110, 110  # un poco más grande y legible
 
         for bike in available_bikes:
+            # Verificar si la bicicleta es favorita de alguien
+            is_favorite = FavoriteBikeService.is_bike_favorite(db, bike.id)
+            favorite_owner = None
+            if is_favorite:
+                favorite_owner = FavoriteBikeService.get_favorite_bike_owner(db, bike.id)
+            
+            # Crear tooltip con información adicional
+            tooltip_text = f"Serie: {bike.serial_number}"
+            if is_favorite and favorite_owner:
+                tooltip_text += f"\nFavorita de: {favorite_owner.full_name}"
+            
+            # Color de fondo según si es favorita
+            bg_color = ft.colors.PINK_50 if is_favorite else ft.colors.GREY_100
+            
             card = ft.Card(
                 elevation=1,
                 content=ft.Container(
                     width=CARD_W,
                     height=CARD_H,
-                    bgcolor=ft.colors.GREY_100,
+                    bgcolor=bg_color,
                     border_radius=8,
                     padding=8,
                     alignment=ft.alignment.center,
                     on_click=_make_bike_select_handler(bike.bike_code),
                     content=ft.Column(
                         [
-                            ft.Icon(ft.icons.DIRECTIONS_BIKE, size=24, color=ft.colors.BLUE_700),
+                            ft.Icon(
+                                ft.icons.FAVORITE if is_favorite else ft.icons.DIRECTIONS_BIKE, 
+                                size=24, 
+                                color=ft.colors.RED if is_favorite else ft.colors.BLUE_700
+                            ),
                             ft.Text(
                                 bike.bike_code,
                                 weight=ft.FontWeight.BOLD,
                                 size=13,
                             ),
+                            ft.Text(
+                                "Favorita" if is_favorite else "",
+                                size=10,
+                                color=ft.colors.RED if is_favorite else ft.colors.TRANSPARENT,
+                                weight=ft.FontWeight.BOLD,
+                            ),
                         ],
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                        spacing=4,
+                        spacing=2,
                     ),
-                    tooltip=f"Serie: {bike.serial_number}",
+                    tooltip=tooltip_text,
                     ink=True,
                 ),
             )

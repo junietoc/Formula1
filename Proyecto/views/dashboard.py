@@ -4,6 +4,7 @@ from models import UserRoleEnum
 
 from .base import View
 from views.home import HomeView
+from services import FavoriteBikeService
 
 
 class DashboardView(View):
@@ -129,6 +130,20 @@ class DashboardView(View):
                 ]
             )
         else:
+            # Obtener información de la bicicleta favorita del usuario
+            favorite_bike_info = None
+            current_user = getattr(self.app, "current_user", None)
+            if current_user:
+                db = self.app.db
+                favorite_bike = FavoriteBikeService.get_user_favorite_bike_by_cedula(db, current_user.cedula)
+                if favorite_bike:
+                    station_info = f"Estación: {favorite_bike.current_station.code} - {favorite_bike.current_station.name}" if favorite_bike.current_station else "Estación: No disponible"
+                    favorite_bike_info = {
+                        "code": favorite_bike.bike_code,
+                        "station": station_info,
+                        "status": favorite_bike.status.value.title()
+                    }
+
             body_content = ft.Column(
                 [
                     ft.Container(height=30),
@@ -182,6 +197,18 @@ class DashboardView(View):
                                                     ),
                                                 ]
                                             ),
+                                            ft.Row(
+                                                [
+                                                    ft.Icon(
+                                                        ft.icons.FAVORITE,
+                                                        color=ft.colors.RED,
+                                                        size=20,
+                                                    ),
+                                                    ft.Text(
+                                                        "Gestionar bicicleta favorita", size=14
+                                                    ),
+                                                ]
+                                            ),
                                         ],
                                         spacing=10,
                                     ),
@@ -193,6 +220,46 @@ class DashboardView(View):
                     ),
                 ]
             )
+
+            # Agregar información de la bicicleta favorita si existe
+            if favorite_bike_info:
+                body_content.controls.append(
+                    ft.Container(height=20)
+                )
+                body_content.controls.append(
+                    ft.Card(
+                        content=ft.Container(
+                            content=ft.Column(
+                                [
+                                    ft.ListTile(
+                                        leading=ft.Icon(ft.icons.FAVORITE, color=ft.colors.RED),
+                                        title=ft.Text(
+                                            "Mi Bicicleta Favorita",
+                                            size=18,
+                                            weight=ft.FontWeight.BOLD,
+                                        ),
+                                        subtitle=ft.Text(
+                                            f"Bicicleta {favorite_bike_info['code']}", size=14
+                                        ),
+                                    ),
+                                    ft.Container(height=10),
+                                    ft.Text(
+                                        f"Ubicación: {favorite_bike_info['station']}",
+                                        size=14,
+                                        color=ft.colors.GREY_700,
+                                    ),
+                                    ft.Text(
+                                        f"Estado: {favorite_bike_info['status']}",
+                                        size=14,
+                                        color=ft.colors.GREY_700,
+                                    ),
+                                ]
+                            ),
+                            padding=20,
+                        ),
+                        elevation=4,
+                    )
+                )
 
         # Botón logout
         def _logout(_: ft.ControlEvent) -> None:  # noqa: D401

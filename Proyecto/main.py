@@ -44,6 +44,7 @@ from views.loan import LoanView
 from views.return_view import ReturnView
 from views.current_loan import CurrentLoanView
 from views.loan_history import LoanHistoryView
+from views.favorite_bike import FavoriteBikeView
 from typing import Callable, Dict
 
 # noqa: F401 needed for typing
@@ -184,11 +185,17 @@ class VeciRunApp:
                     selected_icon=ft.icons.DIRECTIONS_BIKE,
                     label="Mi Préstamo",
                 ),
+                ft.NavigationRailDestination(
+                    icon=ft.icons.FAVORITE,
+                    selected_icon=ft.icons.FAVORITE,
+                    label="Mi Favorita",
+                ),
             ]
 
             # Índices coherentes con las posiciones de *destinations*
             self.view_registry[1] = lambda: AvailabilityView(self)
             self.view_registry[2] = lambda: CurrentLoanView(self)
+            self.view_registry[3] = lambda: FavoriteBikeView(self)
 
         self.nav_rail.destinations = destinations
         self.page.update()
