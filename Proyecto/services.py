@@ -8,6 +8,10 @@ from models import (
     UserAffiliationEnum,
     BikeStatusEnum,
     LoanStatusEnum,
+    Incident,
+    IncidentTypeEnum,
+    IncidentSeverityEnum,
+    ReturnReport,
 )
 from datetime import datetime
 import uuid
@@ -310,3 +314,130 @@ class FavoriteBikeService:
     def is_bike_favorite(db: Session, bike_id: uuid.UUID) -> bool:
         """Check if a bike is someone's favorite"""
         return db.query(User).filter(User.favorite_bike_id == bike_id).first() is not None
+
+
+class IncidentService:
+    """Servicio para manejar incidentes y reportes de devolución"""
+    
+    # Mapeo de severidad a días
+    SEVERITY_DAYS = {
+        1: 1,  # leve
+        2: 3,  # media
+        3: 7,  # grave
+        4: 30,  # maxima
+    }
+    
+    # Mapeo de enum a número
+    SEVERITY_ENUM_TO_INT = {
+        IncidentSeverityEnum.leve: 1,
+        IncidentSeverityEnum.media: 2,
+        IncidentSeverityEnum.grave: 3,
+        IncidentSeverityEnum.maxima: 4,
+    }
+    
+    # Mapeo de número a enum
+    SEVERITY_INT_TO_ENUM = {
+        1: IncidentSeverityEnum.leve,
+        2: IncidentSeverityEnum.media,
+        3: IncidentSeverityEnum.grave,
+        4: IncidentSeverityEnum.maxima,
+    }
+    
+    @staticmethod
+    def create_incident(
+        db: Session,
+        loan_id: uuid.UUID,
+        bike_id: uuid.UUID,
+        reporter_id: uuid.UUID,
+        incident_type: IncidentTypeEnum,
+        severity: IncidentSeverityEnum,
+        description: str,
+        return_report_id: uuid.UUID = None,
+    ) -> Incident:
+        """Crear un nuevo incidente"""
+        incident = Incident(
+            loan_id=loan_id,
+            bike_id=bike_id,
+            reporter_id=reporter_id,
+            type=incident_type,
+            severity=IncidentService.SEVERITY_ENUM_TO_INT[severity],
+            description=description,
+        )
+        db.add(incident)
+        db.commit()
+        db.refresh(incident)
+        return incident
+    
+    @staticmethod
+    def create_automatic_late_incident(
+        db: Session,
+        loan_id: uuid.UUID,
+        bike_id: uuid.UUID,
+        reporter_id: uuid.UUID,
+        minutes_late: int,
+        return_report_id: uuid.UUID = None,
+    ) -> Incident:
+        """Crear incidente automático por devolución tardía"""
+        # Determinar severidad basada en el tiempo de retraso
+        if minutes_late <= 45:
+            severity = IncidentSeverityEnum.leve
+        elif minutes_late <= 300:  # 5 horas
+            severity = IncidentSeverityEnum.media
+        elif minutes_late <= 1440:  # 24 horas
+            severity = IncidentSeverityEnum.grave
+        else:
+            severity = IncidentSeverityEnum.maxima
+        
+        description = f"Devolución tardía: {minutes_late} minutos de retraso"
+        
+        return IncidentService.create_incident(
+            db=db,
+            loan_id=loan_id,
+            bike_id=bike_id,
+            reporter_id=reporter_id,
+            incident_type=IncidentTypeEnum.uso_indebido,
+            severity=severity,
+            description=description,
+            return_report_id=return_report_id,
+        )
+    
+    @staticmethod
+    def create_return_report(
+        db: Session,
+        loan_id: uuid.UUID,
+        created_by: uuid.UUID,
+        incidents: list[Incident] = None,
+    ) -> ReturnReport:
+        """Crear un reporte de devolución con incidentes"""
+        # Calcular días totales de incidentes
+        total_days = 0
+        if incidents:
+            for incident in incidents:
+                total_days += IncidentService.SEVERITY_DAYS.get(incident.severity, 0)
+        
+        return_report = ReturnReport(
+            loan_id=loan_id,
+            total_incident_days=total_days,
+            created_by=created_by,
+        )
+        db.add(return_report)
+        db.commit()
+        db.refresh(return_report)
+        
+        # Asociar incidentes al reporte
+        if incidents:
+            for incident in incidents:
+                incident.return_report_id = return_report.id
+            db.commit()
+        
+        return return_report
+    
+    @staticmethod
+    def get_incidents_by_loan(db: Session, loan_id: uuid.UUID) -> list[Incident]:
+        """Obtener todos los incidentes de un préstamo"""
+        return db.query(Incident).filter(Incident.loan_id == loan_id).all()
+    
+    @staticmethod
+    def get_return_report_by_loan(db: Session, loan_id: uuid.UUID) -> ReturnReport:
+        """Obtener el reporte de devolución de un préstamo"""
+        return db.query(ReturnReport).filter(ReturnReport.loan_id == loan_id).first()

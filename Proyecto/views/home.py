@@ -1,6 +1,6 @@
 import flet as ft
 
-from models import UserRoleEnum
+from models import UserRoleEnum, User
 from services import UserService
 
 from .base import View
@@ -109,6 +109,13 @@ class HomeView(View):
                     _set_status("Usuario no encontrado o rol inválido", ft.colors.RED)
                     return
                 self.app.current_user = user
+            else:  # admin
+                # Para administradores, usar un usuario admin por defecto
+                admin_user = db.query(User).filter(User.role == UserRoleEnum.admin).first()
+                if not admin_user:
+                    _set_status("No se encontró un usuario administrador en el sistema", ft.colors.RED)
+                    return
+                self.app.current_user = admin_user
             
             # Guardar estado global
             self.app.current_user_role = role_dropdown.value

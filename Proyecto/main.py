@@ -45,6 +45,7 @@ from views.return_view import ReturnView
 from views.current_loan import CurrentLoanView
 from views.loan_history import LoanHistoryView
 from views.favorite_bike import FavoriteBikeView
+from views.return_report_view import ReturnReportView
 from typing import Callable, Dict
 
 # noqa: F401 needed for typing
@@ -168,11 +169,17 @@ class VeciRunApp:
                     selected_icon=ft.icons.HISTORY,
                     label="Historial",
                 ),
+                ft.NavigationRailDestination(
+                    icon=ft.icons.REPORT,
+                    selected_icon=ft.icons.REPORT,
+                    label="Reportes",
+                ),
             ]
             self.view_registry[1] = lambda: CreateUserView(self)
             self.view_registry[2] = lambda: LoanView(self)
             self.view_registry[3] = lambda: ReturnView(self)
             self.view_registry[4] = lambda: LoanHistoryView(self)
+            self.view_registry[5] = lambda: ReturnReportView(self)
         else:  # regular
             destinations += [
                 ft.NavigationRailDestination(

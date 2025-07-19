@@ -118,6 +118,16 @@ class DashboardView(View):
                                                     ft.Text("Registrar devoluciones", size=14),
                                                 ]
                                             ),
+                                            ft.Row(
+                                                [
+                                                    ft.Icon(
+                                                        ft.icons.REPORT,
+                                                        color=ft.colors.PURPLE,
+                                                        size=20,
+                                                    ),
+                                                    ft.Text("Ver reportes de devolución", size=14),
+                                                ]
+                                            ),
                                         ],
                                         spacing=10,
                                     ),
