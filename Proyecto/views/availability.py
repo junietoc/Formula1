@@ -93,14 +93,14 @@ class AvailabilityView(View):
                 info_overlay.opacity = 0
                 info_overlay.scale = 0.8
                 page.update()
-                Timer(0.3, lambda: _do_show(pin.data, pin.left, pin.top)).start()
+                Timer(0.1, lambda: _do_show(pin.data, pin.left, pin.top)).start()
             else:
                 # Preparar para aparición
                 info_overlay.visible = True
                 info_overlay.opacity = 0
                 info_overlay.scale = 0.8
                 page.update()
-                Timer(0.3, lambda: _do_show(pin.data, pin.left, pin.top)).start()
+                Timer(0.1, lambda: _do_show(pin.data, pin.left, pin.top)).start()
 
         # Ocultar overlay con animación
         def _hide_overlay() -> None:
@@ -108,7 +108,7 @@ class AvailabilityView(View):
             info_overlay.opacity = 0
             info_overlay.scale = 0.8
             page.update()
-            Timer(0.3, lambda: (setattr(info_overlay, 'visible', False), setattr(info_overlay, 'disabled', False), page.update())).start()
+            Timer(0.1, lambda: (setattr(info_overlay, 'visible', False), setattr(info_overlay, 'disabled', False), page.update())).start()
 
         # Creador de pines
         def make_pin(code: str, left: int, top: int) -> ft.IconButton:
@@ -205,14 +205,7 @@ class AvailabilityView(View):
             ft.Container(height=20), header, ft.Container(height=10), subtitle,
             ft.Container(height=20), map_stack, ft.Container(height=30),
             ft.Row([refresh_btn], alignment=ft.MainAxisAlignment.CENTER), ft.Container(height=20),
-            ft.GridView(
-                runs_count=2,
-                max_extent=300,
-                child_aspect_ratio=1.0,
-                spacing=20,
-                run_spacing=20,
-                controls=availability_cards,
-            ),
+            
         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER,
            scroll=ft.ScrollMode.AUTO)
 
