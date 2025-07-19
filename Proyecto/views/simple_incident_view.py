@@ -14,7 +14,7 @@ class SimpleIncidentView:
     def build(self) -> ft.Control:
         """Construye la vista de generación de incidentes"""
         
-        print(f"SimpleIncidentView.build() llamado con:")
+        print("SimpleIncidentView.build() llamado con:")
         print(f"  loan_id: {self.loan_id}")
         print(f"  bike_id: {self.bike_id}")
         print(f"  user_id: {self.user_id}")

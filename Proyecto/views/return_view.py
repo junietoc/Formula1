@@ -129,7 +129,7 @@ class ReturnView(View):
                         print(f"Préstamo ya está cerrado con status: {loan.status}")
                     
                     # Redirigir a la vista de incidentes
-                    print(f"Creando vista de incidentes con:")
+                    print("Creando vista de incidentes con:")
                     print(f"  loan_id: {loan_id} (tipo: {type(loan_id)})")
                     print(f"  bike_id: {loan.bike_id} (tipo: {type(loan.bike_id)})")
                     # Verificar si hay un usuario actual
