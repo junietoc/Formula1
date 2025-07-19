@@ -1,4 +1,6 @@
 import flet as ft
+import os
+import base64
 
 from services import StationService, BicycleService
 
@@ -18,6 +20,86 @@ class AvailabilityView(View):
         """Construye la vista y devuelve el Control principal."""
         page = self.app.page
         db = self.app.db
+        # Load campus map v5 with blue circles
+        map_file = os.path.join(os.path.dirname(__file__), "campus_mapa.png")
+        with open(map_file, "rb") as f:
+            map_b64 = base64.b64encode(f.read()).decode()
+
+        # Side panel overlay for pin details (initially empty)
+        drawer_container = ft.Container(
+            content=ft.Column(
+                [],
+                spacing=10,
+                scroll=ft.ScrollMode.AUTO,
+            ),
+            width=300,
+            padding=20,
+            expand=True,
+            right=0,
+            top=0,
+            visible=False,
+            bgcolor=ft.colors.WHITE,
+        )
+
+        # Functions to open/close the side panel with dynamic content based on pin id
+        def _open_drawer(e: ft.ControlEvent) -> None:
+            # Determine which pin was clicked
+            pin_id = e.control.data
+            # Build details content for each pin
+            if pin_id == "calle53":
+                details = [
+                    ft.Text("Información de Calle 53", weight=ft.FontWeight.BOLD, size=18),
+                    ft.Text("Este es un punto de interés ubicado en Calle 53."),
+                ]
+            elif pin_id == "cyt":
+                details = [
+                    ft.Text("Información de CyT", weight=ft.FontWeight.BOLD, size=18),
+                    ft.Text("Este es el Centro de Tecnología (CyT).")
+                ]
+            else:
+                details = [ft.Text(f"Detalles de {pin_id}")]
+            # Close button
+            details.append(ft.ElevatedButton("Cerrar", on_click=_close_drawer))
+            # Update drawer content and show
+            drawer_container.content = ft.Column(details, spacing=10, scroll=ft.ScrollMode.AUTO)
+            drawer_container.visible = True
+            page.update()
+
+        def _close_drawer(e: ft.ControlEvent) -> None:
+            drawer_container.visible = False
+            page.update()
+
+        # Define pin positions based on campus map and bind open_drawer with data id
+        pins = [
+            # Calle 53
+            ft.IconButton(
+                icon=ft.icons.PIN_DROP,
+                icon_color=ft.colors.BLUE,
+                data="calle53",
+                left=290,
+                top=40,
+                on_click=_open_drawer
+            ),
+            # CyT
+            ft.IconButton(
+                icon=ft.icons.PIN_DROP,
+                icon_color=ft.colors.BLUE,
+                data="cyt",
+                left=315,
+                top=320,
+                on_click=_open_drawer
+            ),
+            # agregar más pines con coordenadas apropiadas...
+        ]
+        
+        # Overlay map image and pins
+        map_stack = ft.Stack(
+            controls=[    # ← primero la imagen escalada… ← fondo
+                ft.Image(src_base64=map_b64, width=659)
+            ] + pins,       # …luego los pins
+            width=659,
+            height=669,
+        )
 
         # Obtener datos
         stations = StationService.get_all_stations(db)
@@ -89,12 +171,15 @@ class AvailabilityView(View):
             style=ft.ButtonStyle(color=ft.colors.WHITE, bgcolor=ft.colors.BLUE),
         )
 
-        return ft.Column(
+        # Wrap the main content and the side panel into a Stack
+        content_column = ft.Column(
             [
                 ft.Container(height=20),
                 header,
                 ft.Container(height=10),
                 subtitle,
+                ft.Container(height=20),
+                map_stack,
                 ft.Container(height=30),
                 ft.Row([refresh_btn], alignment=ft.MainAxisAlignment.CENTER),
                 ft.Container(height=20),
@@ -109,4 +194,8 @@ class AvailabilityView(View):
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             scroll=ft.ScrollMode.AUTO,
+        )
+        return ft.Stack(
+            controls=[content_column, drawer_container],
+            expand=True,
         )
