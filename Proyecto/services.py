@@ -118,6 +118,8 @@ class LoanService:
         bicycle = db.query(Bicycle).filter(Bicycle.id == bike_id).first()
         if bicycle:
             bicycle.status = BikeStatusEnum.prestada
+            # La bicicleta ya no está en ninguna estación mientras está prestada
+            bicycle.current_station_id = None
 
         db.commit()
         db.refresh(loan)
@@ -138,10 +140,12 @@ class LoanService:
         loan.time_in = datetime.now(CO_TZ)
         loan.status = LoanStatusEnum.cerrado
 
-        # Update bicycle status back to 'disponible'
+        # Update bicycle status back to 'disponible' y asignar la estación de llegada
         bicycle = db.query(Bicycle).filter(Bicycle.id == loan.bike_id).first()
         if bicycle:
             bicycle.status = BikeStatusEnum.disponible
+            # Actualizar la estación actual de la bicicleta para reflejar la estación de llegada
+            bicycle.current_station_id = station_in_id
 
         db.commit()
         db.refresh(loan)
