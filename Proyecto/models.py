@@ -72,6 +72,13 @@ class IncidentTypeEnum(enum.Enum):
     otro = "otro"
 
 
+class IncidentSeverityEnum(enum.Enum):
+    leve = "leve"
+    media = "media"
+    grave = "grave"
+    maxima = "maxima"
+
+
 class PrivilegeTypeEnum(enum.Enum):
     extra_tiempo = "extra_tiempo"
     reserva = "reserva"
@@ -225,8 +232,9 @@ class Incident(Base):
     loan_id = Column(UUID(as_uuid=True), ForeignKey("loans.id"))
     bike_id = Column(UUID(as_uuid=True), ForeignKey("bicycles.id"))
     reporter_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
+    return_report_id = Column(UUID(as_uuid=True), ForeignKey("return_reports.id"))
     type = Column(Enum(IncidentTypeEnum))
-    severity = Column(SmallInteger)
+    severity = Column(SmallInteger)  # 1=leve, 2=media, 3=grave, 4=maxima
     description = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     resolved_at = Column(DateTime(timezone=True))
@@ -235,6 +243,7 @@ class Incident(Base):
     loan = relationship("Loan")
     bike = relationship("Bicycle", back_populates="incidents")
     reporter = relationship("User")
+    return_report = relationship("ReturnReport", back_populates="incidents")
 
     __table_args__ = (Index("ix_incidents_bike_id", "bike_id"),)
 
@@ -312,3 +321,19 @@ class InventoryReport(Base):
 
     station = relationship("Station", back_populates="inventory_reports")
     reporter = relationship("User")
+
+
+class ReturnReport(Base):
+    __tablename__ = "return_reports"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    loan_id = Column(UUID(as_uuid=True), ForeignKey("loans.id"), nullable=False)
+    total_incident_days = Column(Integer, default=0)  # Suma total de días de todos los incidentes
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
+
+    loan = relationship("Loan")
+    creator = relationship("User")
+    incidents = relationship("Incident", back_populates="return_report")
+
+    __table_args__ = (Index("ix_return_reports_loan_id", "loan_id"),)

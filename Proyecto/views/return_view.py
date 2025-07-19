@@ -106,12 +106,54 @@ class ReturnView(View):
         def _make_return_handler(loan_id):
             def _handler(_: ft.ControlEvent):
                 try:
-                    LoanService.return_loan(db, loan_id=loan_id, station_in_id=station.id)
-                    _set_result("Devolución registrada exitosamente", ft.colors.GREEN)
-                    # Recargar la vista para reflejar los cambios
-                    self.app.content_area.content = ReturnView(self.app).build()
-                    self.app.page.update()
+                    # Obtener el préstamo antes de devolverlo
+                    loan = LoanService.get_loan_by_id(db, loan_id)
+                    if not loan:
+                        _set_result("Préstamo no encontrado", ft.colors.RED)
+                        return
+                    
+                    # Calcular minutos de retraso
+                    minutes_late = 0
+                    if loan.time_out:
+                        loan_time = loan.time_out
+                        if loan_time.tzinfo is None:
+                            loan_time = loan_time.replace(tzinfo=CO_TZ)
+                        minutes_late = int((now - loan_time).total_seconds() // 60)
+                        if minutes_late <= 15:  # No es tardío
+                            minutes_late = 0
+                    
+                    # Registrar la devolución solo si no está cerrado
+                    if loan.status == LoanStatusEnum.abierto:
+                        LoanService.return_loan(db, loan_id=loan_id, station_in_id=station.id)
+                    else:
+                        print(f"Préstamo ya está cerrado con status: {loan.status}")
+                    
+                    # Redirigir a la vista de incidentes
+                    print("Creando vista de incidentes con:")
+                    print(f"  loan_id: {loan_id} (tipo: {type(loan_id)})")
+                    print(f"  bike_id: {loan.bike_id} (tipo: {type(loan.bike_id)})")
+                    # Verificar si hay un usuario actual
+                    if not self.app.current_user:
+                        _set_result("Error: No hay usuario autenticado", ft.colors.RED)
+                        return
+                    
+                    print(f"  user_id: {self.app.current_user.id} (tipo: {type(self.app.current_user.id)})")
+                    print(f"  minutes_late: {minutes_late}")
+                    
+                    from .incident_view import IncidentView
+                    incident_view = IncidentView(
+                        app=self.app,
+                        loan_id=loan_id,  # Ya es UUID
+                        bike_id=loan.bike_id,  # Ya es UUID
+                        user_id=self.app.current_user.id,  # Ya es UUID
+                        minutes_late=minutes_late,
+                    )
+                    incident_view.show()
+                    
                 except Exception as exc:  # noqa: BLE001
+                    print(f"Error en devolución: {exc}")
+                    import traceback
+                    traceback.print_exc()
                     _set_result(str(exc), ft.colors.RED)
 
             return _handler
