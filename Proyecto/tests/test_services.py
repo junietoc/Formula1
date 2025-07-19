@@ -183,3 +183,52 @@ def test_loan_lifecycle(session):
     # Attempting to return again should raise ValueError
     with pytest.raises(ValueError):
         LoanService.return_loan(session, loan.id, station_in.id)
+
+
+def test_bicycle_station_updates_on_loan_return(session):
+    """La bicicleta debe cambiar su estación actual correctamente durante el ciclo de préstamo."""
+    # Preparar datos
+    user = UserService.create_user(
+        session,
+        cedula="222222",
+        carnet="",
+        full_name="Station Test User",
+        email="station@example.com",
+        affiliation=UserAffiliationEnum.estudiante,
+        role=UserRoleEnum.usuario,
+    )
+
+    station_out = _create_station(session, "EST300", "Salida 300")
+    station_in = _create_station(session, "EST400", "Llegada 400")
+
+    bike = _create_bicycle(
+        session,
+        serial="S300",
+        code="B300",
+        status=BikeStatusEnum.disponible,
+    )
+    # La bicicleta inicia en station_out
+    bike.current_station_id = station_out.id
+    session.commit()
+
+    # --- Crear préstamo ---
+    loan = LoanService.create_loan(
+        session,
+        user_id=user.id,
+        bike_id=bike.id,
+        station_out_id=station_out.id,
+        station_in_id=station_in.id,
+    )
+
+    # Al iniciar el préstamo la bicicleta ya no debe estar en ninguna estación
+    session.refresh(bike)
+    assert bike.current_station_id is None, "La bicicleta debería estar sin estación durante el préstamo"
+
+    # --- Registrar devolución ---
+    LoanService.return_loan(session, loan_id=loan.id, station_in_id=station_in.id)
+
+    # La bicicleta debe quedar asociada a la estación de llegada
+    session.refresh(bike)
+    assert (
+        bike.current_station_id == station_in.id
+    ), "La bicicleta no se asignó correctamente a la estación de llegada"
