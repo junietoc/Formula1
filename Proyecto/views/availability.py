@@ -14,7 +14,7 @@ class AvailabilityView(View):
     MAP_WIDTH = 659
     OVERLAY_WIDTH = 300
 
-    def __init__(self, app: "VeciRunApp") -> None:
+    def __init__(self, app: "VeciRunApp") -> None:  # noqa: F821
         self.app = app
 
     def build(self) -> ft.Control:

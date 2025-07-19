@@ -10,7 +10,7 @@ try:
 except ModuleNotFoundError:  # Entorno sin flet-material (p.ej. CI)
     class _FMStub:  # noqa: D101
         class Theme:  # noqa: D101
-            bgcolor = None
+            bgcolor = ft.colors.WHITE
 
             @staticmethod
             def set_theme(*args, **kwargs):  # noqa: D401,D401
