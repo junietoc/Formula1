@@ -17,6 +17,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import uuid
 import enum
+from sqlalchemy import inspect
 
 Base = declarative_base()
 
