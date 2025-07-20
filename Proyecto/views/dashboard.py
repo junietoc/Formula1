@@ -5,6 +5,8 @@ from models import UserRoleEnum
 from .base import View
 from views.home import HomeView
 from services import FavoriteBikeService
+from datetime import datetime
+from models import Sanction, SanctionStatusEnum
 
 
 class DashboardView(View):
@@ -154,82 +156,151 @@ class DashboardView(View):
                         "status": favorite_bike.status.value.title()
                     }
 
-            body_content = ft.Column(
-                [
-                    ft.Container(height=30),
-                    ft.Card(
+            # Verificar sanciones activas
+            sanction_banner = None
+            if current_user:
+                db = self.app.db
+                now_utc = datetime.utcnow()
+                active_sanction = (
+                    db.query(Sanction)
+                    .filter(
+                        Sanction.user_id == current_user.id,
+                        Sanction.status == SanctionStatusEnum.activa,
+                        Sanction.start_at <= now_utc,
+                        Sanction.end_at >= now_utc,
+                    )
+                    .first()
+                )
+
+                if active_sanction:
+                    end_str = active_sanction.end_at.strftime("%d/%m/%Y %H:%M") if active_sanction.end_at else "N/A"
+
+                    def _go_to_sanction(_):
+                        # Navegar a la vista "Mi Préstamo" (índice 2 en regulares)
+                        try:
+                            self.app.nav_rail.selected_index = 2
+                            self.app.content_area.content = CurrentLoanView(self.app).build()
+                            self.app.page.update()
+                        except Exception:
+                            pass
+
+                    sanction_banner = ft.Card(
                         content=ft.Container(
-                            content=ft.Column(
+                            content=ft.Row(
                                 [
-                                    ft.ListTile(
-                                        leading=ft.Icon(ft.icons.PERSON, color=ft.colors.GREEN),
-                                        title=ft.Text(
-                                            "Panel de Usuario",
-                                            size=18,
-                                            weight=ft.FontWeight.BOLD,
-                                        ),
-                                        subtitle=ft.Text(
-                                            "Acceso a información del sistema", size=14
-                                        ),
-                                    ),
-                                    ft.Container(height=20),
-                                    ft.Text(
-                                        "Como usuario regular, puede:",
-                                        size=16,
-                                        weight=ft.FontWeight.BOLD,
-                                        color=ft.colors.GREY_700,
-                                    ),
-                                    ft.Container(height=10),
+                                    ft.Icon(ft.icons.GAVEL, color=ft.colors.RED, size=32),
+                                    ft.Container(width=10),
                                     ft.Column(
                                         [
-                                            ft.Row(
-                                                [
-                                                    ft.Icon(
-                                                        ft.icons.LOCATION_ON,
-                                                        color=ft.colors.BLUE,
-                                                        size=20,
-                                                    ),
-                                                    ft.Text(
-                                                        "Consultar disponibilidad de bicicletas",
-                                                        size=14,
-                                                    ),
-                                                ]
+                                            ft.Text(
+                                                f"¡Tienes una sanción activa hasta {end_str}!",
+                                                weight=ft.FontWeight.BOLD,
+                                                color=ft.colors.RED_600,
                                             ),
-                                            ft.Row(
-                                                [
-                                                    ft.Icon(
-                                                        ft.icons.INFO,
-                                                        color=ft.colors.GREY,
-                                                        size=20,
-                                                    ),
-                                                    ft.Text(
-                                                        "Ver información de estaciones", size=14
-                                                    ),
-                                                ]
-                                            ),
-                                            ft.Row(
-                                                [
-                                                    ft.Icon(
-                                                        ft.icons.FAVORITE,
-                                                        color=ft.colors.RED,
-                                                        size=20,
-                                                    ),
-                                                    ft.Text(
-                                                        "Gestionar bicicleta favorita", size=14
-                                                    ),
-                                                ]
+                                            ft.Text(
+                                                "Puedes ver los detalles en la sección 'Mi Préstamo'.",
+                                                size=12,
+                                                color=ft.colors.GREY_700,
                                             ),
                                         ],
-                                        spacing=10,
+                                        spacing=2,
                                     ),
-                                ]
+                                    ft.Container(expand=True),
+                                    
+                                ],
+                                alignment=ft.MainAxisAlignment.START,
                             ),
-                            padding=20,
+                            padding=ft.padding.all(12),
+                            bgcolor=ft.colors.RED_50,
+                            border_radius=6,
                         ),
-                        elevation=4,
+                        elevation=2,
+                    )
+
+            # Ahora construir body_content completo
+
+            body_controls: list[ft.Control] = [ft.Container(height=30)]
+
+            if sanction_banner:
+                body_controls.append(sanction_banner)
+                body_controls.append(ft.Container(height=20))
+
+            body_controls.append(
+                ft.Card(
+                    content=ft.Container(
+                        content=ft.Column(
+                            [
+                                ft.ListTile(
+                                    leading=ft.Icon(ft.icons.PERSON, color=ft.colors.GREEN),
+                                    title=ft.Text(
+                                        "Panel de Usuario",
+                                        size=18,
+                                        weight=ft.FontWeight.BOLD,
+                                    ),
+                                    subtitle=ft.Text(
+                                        "Acceso a información del sistema", size=14
+                                    ),
+                                ),
+                                ft.Container(height=20),
+                                ft.Text(
+                                    "Como usuario regular, puede:",
+                                    size=16,
+                                    weight=ft.FontWeight.BOLD,
+                                    color=ft.colors.GREY_700,
+                                ),
+                                ft.Container(height=10),
+                                ft.Column(
+                                    [
+                                        ft.Row(
+                                            [
+                                                ft.Icon(
+                                                    ft.icons.LOCATION_ON,
+                                                    color=ft.colors.BLUE,
+                                                    size=20,
+                                                ),
+                                                ft.Text(
+                                                    "Consultar disponibilidad de bicicletas",
+                                                    size=14,
+                                                ),
+                                            ]
+                                        ),
+                                        ft.Row(
+                                            [
+                                                ft.Icon(
+                                                    ft.icons.INFO,
+                                                    color=ft.colors.GREY,
+                                                    size=20,
+                                                ),
+                                                ft.Text(
+                                                    "Ver información de estaciones", size=14
+                                                ),
+                                            ]
+                                        ),
+                                        ft.Row(
+                                            [
+                                                ft.Icon(
+                                                    ft.icons.FAVORITE,
+                                                    color=ft.colors.RED,
+                                                    size=20,
+                                                ),
+                                                ft.Text(
+                                                    "Gestionar bicicleta favorita", size=14
+                                                ),
+                                            ]
+                                        ),
+                                    ],
+                                    spacing=10,
+                                ),
+                            ]
+                        ),
+                        padding=20,
                     ),
-                ]
+                    elevation=4,
+                )
             )
+
+            # Construir Column final con los controles reunidos
+            body_content = ft.Column(body_controls, spacing=10)
 
             # Agregar información de la bicicleta favorita si existe
             if favorite_bike_info:

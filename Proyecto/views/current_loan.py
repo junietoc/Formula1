@@ -13,7 +13,7 @@ except ModuleNotFoundError:  # CI or environments without flet-material
 
     fm = _FMStub()  # type: ignore
 
-from services import LoanService
+from services import LoanService, IncidentService
 from models import LoanStatusEnum
 from .base import View
 
@@ -23,6 +23,106 @@ class CurrentLoanView(View):
 
     def __init__(self, app: "VeciRunApp") -> None:  # noqa: F821
         self.app = app
+
+    # ------------------------------------------------------------------
+    # Helpers de interfaz
+    # ------------------------------------------------------------------
+    def _show_incidents_dialog(self, loan):
+        """Muestra un diálogo con los incidentes y posibles sanciones del préstamo"""
+
+        db = self.app.db
+
+        from models import Sanction  # Importar local para evitar ciclos
+
+        incidents = IncidentService.get_incidents_by_loan(db, loan.id)
+
+        if not incidents:
+            # Fallback: debería no ocurrir porque sólo se llama si hay incidentes,
+            # pero por seguridad mostrar mensaje simple
+            dialog = ft.AlertDialog(
+                modal=True,
+                title=ft.Text("Sin incidentes"),
+                content=ft.Text("Este préstamo no tiene incidentes registrados."),
+                actions=[ft.TextButton("Cerrar", on_click=lambda _e: self._close_dialog())],
+                actions_alignment=ft.MainAxisAlignment.END,
+            )
+            self.app.page.dialog = dialog
+            dialog.open = True
+            self.app.page.update()
+            return
+
+        # Construir listado de incidentes
+        incident_controls: list[ft.Control] = []
+
+        for i, incident in enumerate(incidents, start=1):
+            severity_enum = IncidentService.SEVERITY_INT_TO_ENUM.get(incident.severity)
+            severity_str = severity_enum.value.title() if severity_enum else str(incident.severity)
+
+            sanction = (
+                db.query(Sanction).filter(Sanction.incident_id == incident.id).first()
+            )
+
+            sanction_details: list[ft.Control]
+            if sanction:
+                status_text = sanction.status.value if hasattr(sanction.status, "value") else str(sanction.status)
+                sanction_details = [
+                    ft.Row([
+                        ft.Text("Sanción:", weight=ft.FontWeight.BOLD),
+                        ft.Text(status_text, color=ft.colors.RED_400),
+                    ], spacing=5),
+                    ft.Text(
+                        f"Inicio: {sanction.start_at.strftime('%d/%m/%Y %H:%M')}",
+                        size=11,
+                    ),
+                    ft.Text(
+                        f"Fin: {sanction.end_at.strftime('%d/%m/%Y %H:%M')}",
+                        size=11,
+                    ),
+                ]
+            else:
+                sanction_details = [ft.Text("Sin sanción asociada", size=11, color=ft.colors.GREY_600)]
+
+            incident_controls.append(
+                ft.Container(
+                    content=ft.Column([
+                        ft.Row([
+                            ft.Text(f"Incidente #{i}", weight=ft.FontWeight.BOLD),
+                            ft.Container(width=10),
+                            ft.Text(incident.type.value.title()),
+                            ft.Container(width=10),
+                            ft.Text(severity_str, color=ft.colors.BLUE_600),
+                        ], spacing=0),
+                        ft.Text(incident.description or "Sin descripción", size=11),
+                        *sanction_details,
+                    ], spacing=4),
+                    padding=ft.padding.all(8),
+                    border=ft.border.all(1, ft.colors.GREY_300),
+                    border_radius=4,
+                )
+            )
+
+        def _close(_):
+            self._close_dialog()
+
+        dialog = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Detalles de Incidentes"),
+            content=ft.Column(incident_controls, tight=True, spacing=8),
+            actions=[ft.TextButton("Cerrar", on_click=_close)],
+            actions_alignment=ft.MainAxisAlignment.END,
+            shape=ft.RoundedRectangleBorder(radius=8),
+        )
+
+        self.app.page.dialog = dialog
+        dialog.open = True
+        self.app.page.update()
+
+    def _close_dialog(self):
+        """Cierra el diálogo actual (si existe)"""
+        dlg = getattr(self.app.page, "dialog", None)
+        if dlg is not None:
+            dlg.open = False
+            self.app.page.update()
 
     # ------------------------------------------------------------------
     # Public API
@@ -90,6 +190,11 @@ class CurrentLoanView(View):
             time_out_str = loan.time_out.strftime("%d/%m/%Y %H:%M") if loan.time_out else "N/A"
             time_in_str = loan.time_in.strftime("%d/%m/%Y %H:%M") if loan.time_in else "Pendiente"
 
+            # --------------------------------------------------
+            # Comprobar si el préstamo tiene incidentes asociados
+            # --------------------------------------------------
+            has_incident = bool(IncidentService.get_incidents_by_loan(db, loan.id))
+
             # Duración
             if loan.status == LoanStatusEnum.abierto and loan.time_out:
                 delta = datetime.now() - loan.time_out
@@ -107,27 +212,45 @@ class CurrentLoanView(View):
             status_text = loan.status.value.title()
             status_color = status_colors.get(loan.status, ft.colors.GREY)
 
+            # ------------------------------------------------------------------
+            # Construir la fila principal con estado e indicador de incidente
+            # ------------------------------------------------------------------
+            row_controls = [
+                ft.Icon(ft.icons.DIRECTIONS_BIKE, color=ft.colors.BLUE),
+                ft.Text(
+                    f"Bicicleta: {bike_code}",
+                    weight=ft.FontWeight.BOLD,
+                    size=16,
+                ),
+                ft.Container(expand=True),
+            ]
+
+            # Indicador de incidente (si existe)
+            if has_incident:
+                row_controls.append(
+                    ft.IconButton(
+                        icon=ft.icons.REPORT,
+                        icon_color=ft.colors.RED,
+                        tooltip="Ver incidente(s)",
+                        on_click=lambda _e, ln=loan: self._show_incidents_dialog(ln),
+                    )
+                )
+
+            # Chip de estado del préstamo
+            row_controls.append(
+                ft.Container(
+                    content=ft.Text(status_text, color=ft.colors.WHITE),
+                    bgcolor=status_color,
+                    padding=ft.padding.all(8),
+                    border_radius=ft.border_radius.all(12),
+                )
+            )
+
             return ft.Card(
                 content=ft.Container(
                     content=ft.Column(
                         [
-                            ft.Row(
-                                [
-                                    ft.Icon(ft.icons.DIRECTIONS_BIKE, color=ft.colors.BLUE),
-                                    ft.Text(
-                                        f"Bicicleta: {bike_code}",
-                                        weight=ft.FontWeight.BOLD,
-                                        size=16,
-                                    ),
-                                    ft.Container(expand=True),
-                                    ft.Container(
-                                        content=ft.Text(status_text, color=ft.colors.WHITE),
-                                        bgcolor=status_color,
-                                        padding=ft.padding.all(8),
-                                        border_radius=ft.border_radius.all(12),
-                                    ),
-                                ]
-                            ),
+                            ft.Row(row_controls),
                             ft.Divider(),
                             ft.Row(
                                 [
