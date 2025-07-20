@@ -12,6 +12,8 @@ from models import (
     IncidentTypeEnum,
     IncidentSeverityEnum,
     ReturnReport,
+    Sanction,
+    SanctionStatusEnum,
 )
 from datetime import datetime
 import uuid
@@ -102,7 +104,32 @@ class LoanService:
         station_out_id: uuid.UUID,
         station_in_id: uuid.UUID | None = None,
     ) -> Loan:
-        """Register a loan (bike check-out)"""
+        """Register a loan (bike check-out).
+
+        Antes de crear el préstamo se valida que el usuario no posea sanciones
+        activas que coincidan con el rango de fechas actual. Si existe al
+        menos una sanción activa, se lanza ``ValueError``.
+        """
+
+        # ---------------------------------------------------------------
+        # Validar sanciones activas para el usuario
+        # ---------------------------------------------------------------
+        now_utc = datetime.utcnow()
+        active_sanction = (
+            db.query(Sanction)
+            .filter(
+                Sanction.user_id == user_id,
+                Sanction.status == SanctionStatusEnum.activa,
+                Sanction.start_at <= now_utc,
+                Sanction.end_at >= now_utc,
+            )
+            .first()
+        )
+        if active_sanction:
+            raise ValueError(
+                "El usuario posee una sanción activa y no puede registrar préstamos."
+            )
+
         # Create the loan con timestamp en hora local de Colombia
         loan = Loan(
             user_id=user_id,

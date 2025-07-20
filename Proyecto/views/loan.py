@@ -255,13 +255,18 @@ class LoanView(View):
                 return
 
             # Registrar préstamo
-            LoanService.create_loan(
-                db,
-                user_id=user.id,
-                bike_id=bike.id,
-                station_out_id=st_out.id,
-                station_in_id=st_in.id,
-            )
+            try:
+                LoanService.create_loan(
+                    db,
+                    user_id=user.id,
+                    bike_id=bike.id,
+                    station_out_id=st_out.id,
+                    station_in_id=st_in.id,
+                )
+            except ValueError as exc:
+                _set_result(str(exc), ft.colors.RED)
+                return
+
             _set_result("Préstamo registrado exitosamente", ft.colors.GREEN)
             # Limpiar campos
             user_cedula.value = ""
