@@ -5,7 +5,7 @@ from models import UserRoleEnum
 from .base import View
 from views.home import HomeView
 from services import FavoriteBikeService
-from datetime import datetime
+from datetime import datetime, timezone
 from models import Sanction, SanctionStatusEnum
 
 
@@ -160,7 +160,7 @@ class DashboardView(View):
             sanction_banner = None
             if current_user:
                 db = self.app.db
-                now_utc = datetime.utcnow()
+                now_utc = datetime.now(timezone.utc)
                 active_sanction = (
                     db.query(Sanction)
                     .filter(

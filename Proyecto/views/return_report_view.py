@@ -204,7 +204,7 @@ class ReturnReportView:
     def _generate_sanction(self, incident):
         """Genera una sanción básica para el incidente proporcionado y muestra confirmación"""
         from models import Sanction
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
 
         # Calcular duración en días basado en severidad
         days = IncidentService.SEVERITY_DAYS.get(incident.severity, 0)
@@ -227,8 +227,8 @@ class ReturnReportView:
             user_id=incident.loan.user_id,
             incident_id=incident.id,
             operator_id=operator_uuid,
-            start_at=datetime.utcnow(),
-            end_at=datetime.utcnow() + timedelta(days=days),
+            start_at=datetime.now(timezone.utc),
+            end_at=datetime.now(timezone.utc) + timedelta(days=days),
         )
         self.app.db.add(sanction)
         self.app.db.commit()
