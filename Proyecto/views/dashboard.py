@@ -1,6 +1,7 @@
 import flet as ft
 
 from models import UserRoleEnum
+from views.current_loan import CurrentLoanView
 
 from .base import View
 from views.home import HomeView

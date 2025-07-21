@@ -12,8 +12,16 @@ from models import (
     UserAffiliationEnum,
     UserRoleEnum,
 )
-from services import UserService
+from services import UserService, LoanService, IncidentService
 from views.dashboard import DashboardView
+from views.current_loan import CurrentLoanView
+from models import (
+    Station,
+    Bicycle,
+    BikeStatusEnum,
+    IncidentSeverityEnum,
+    IncidentTypeEnum,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -158,16 +166,6 @@ def test_dashboard_hides_banner_when_no_active_sanction(app, db_session):  # noq
 # ---------------------------------------------------------------------------
 # Extra helpers for *CurrentLoanView* dialog tests
 # ---------------------------------------------------------------------------
-
-from services import LoanService, IncidentService
-from models import (
-    Station,
-    Bicycle,
-    BikeStatusEnum,
-    IncidentSeverityEnum,
-    IncidentTypeEnum,
-)
-from views.current_loan import CurrentLoanView
 
 
 def _create_station_and_bike(session):  # noqa: D401
