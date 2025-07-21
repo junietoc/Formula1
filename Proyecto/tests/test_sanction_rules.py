@@ -115,7 +115,7 @@ def test_create_loan_fails_when_user_has_active_sanction(db_session):  # noqa: D
     bike = _create_bike(db_session, "SER1", "B001")
 
     # Crear sanción activa: hoy dentro del rango
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     sanction = Sanction(
         user_id=user.id,
         incident_id=None,  # Para pruebas no necesitamos incidente real
@@ -157,8 +157,8 @@ def test_create_loan_when_sanction_expired_is_allowed(db_session):  # noqa: D401
         user_id=user.id,
         incident_id=None,
         operator_id=None,
-        start_at=datetime.utcnow() - timedelta(days=10),
-        end_at=datetime.utcnow() - timedelta(days=5),
+        start_at=datetime.now(timezone.utc) - timedelta(days=10),
+        end_at=datetime.now(timezone.utc) - timedelta(days=5),
         status=SanctionStatusEnum.expirada,
     )
     db_session.add(past_sanction)

@@ -114,7 +114,7 @@ class LoanService:
         # ---------------------------------------------------------------
         # Validar sanciones activas para el usuario
         # ---------------------------------------------------------------
-        now_utc = datetime.utcnow()
+        now_utc = datetime.now(timezone.utc)
         active_sanction = (
             db.query(Sanction)
             .filter(
