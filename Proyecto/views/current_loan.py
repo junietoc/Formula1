@@ -65,10 +65,19 @@ class CurrentLoanView(View):
             sanction_details: list[ft.Control]
             if sanction:
                 status_text = sanction.status.value if hasattr(sanction.status, "value") else str(sanction.status)
+
+                # Seleccionar color según el estado de la sanción
+                _status_colors = {
+                    "activa": ft.colors.RED_400,
+                    "apelada": ft.colors.ORANGE_400,
+                    "expirada": ft.colors.GREY_600,
+                }
+                status_color = _status_colors.get(getattr(sanction.status, "name", ""), ft.colors.GREY_600)
+
                 sanction_details = [
                     ft.Row([
                         ft.Text("Sanción:", weight=ft.FontWeight.BOLD),
-                        ft.Text(status_text, color=ft.colors.RED_400),
+                        ft.Text(status_text, color=status_color),
                     ], spacing=5),
                     ft.Text(
                         f"Inicio: {sanction.start_at.strftime('%d/%m/%Y %H:%M')}",
@@ -79,6 +88,40 @@ class CurrentLoanView(View):
                         size=11,
                     ),
                 ]
+
+                # Mostrar información de apelación y respuesta, si existen
+                if sanction.appeal_text:
+                    sanction_details.extend([
+                        ft.Divider(),
+                        ft.Text("Motivo de la apelación:", weight=ft.FontWeight.BOLD, size=11),
+                        ft.Text(sanction.appeal_text, size=11),
+                    ])
+
+                    if sanction.appeal_response:
+                        sanction_details.extend([
+                            ft.Text("Respuesta del operador:", weight=ft.FontWeight.BOLD, size=11),
+                            ft.Text(sanction.appeal_response or "(sin respuesta)", size=11),
+                        ])
+
+                # Indicar si fue rechazada o aceptada (independiente de respuesta)
+                if sanction.status.name == "activa":
+                    sanction_details.append(
+                        ft.Text("Apelación rechazada", color=ft.colors.RED_400, size=11)
+                    )
+                elif sanction.status.name == "expirada":
+                    sanction_details.append(
+                        ft.Text("Apelación aceptada", color=ft.colors.GREEN, size=11)
+                    )
+                # Mostrar botón solo si la sanción está activa y nunca ha sido apelada
+                if getattr(sanction.status, "name", "") == "activa" and not sanction.appeal_text:
+                    sanction_details.append(
+                        ft.ElevatedButton(
+                            "Apelar Sanción",
+                            icon=ft.icons.GAVEL,
+                            style=ft.ButtonStyle(padding=ft.padding.symmetric(horizontal=8, vertical=4)),
+                            on_click=lambda _e, sanc=sanction: self._show_appeal_dialog(sanc),
+                        )
+                    )
             else:
                 sanction_details = [ft.Text("Sin sanción asociada", size=11, color=ft.colors.GREY_600)]
 
@@ -107,7 +150,15 @@ class CurrentLoanView(View):
         dialog = ft.AlertDialog(
             modal=True,
             title=ft.Text("Detalles de Incidentes"),
-            content=ft.Column(incident_controls, tight=True, spacing=8),
+            content=ft.Container(
+                content=ft.Column(
+                    incident_controls,
+                    tight=False,
+                    spacing=8,
+                    scroll=ft.ScrollMode.ADAPTIVE,
+                ),
+                width=600,
+            ),
             actions=[ft.TextButton("Cerrar", on_click=_close)],
             actions_alignment=ft.MainAxisAlignment.END,
             shape=ft.RoundedRectangleBorder(radius=8),
@@ -123,6 +174,55 @@ class CurrentLoanView(View):
         if dlg is not None:
             dlg.open = False
             self.app.page.update()
+
+    # ------------------------------------------------------------------
+    # Apelación de sanción
+    # ------------------------------------------------------------------
+
+    def _show_appeal_dialog(self, sanction):  # noqa: D401
+        """Muestra un diálogo para que el usuario envíe la apelación."""
+
+        from models import SanctionStatusEnum  # Import local para evitar ciclos
+
+        # Seguridad: impedir múltiples apelaciones desde otros clientes o versiones
+        if sanction.appeal_text:
+            self.app.page.snack_bar = ft.SnackBar(
+                content=ft.Text("La sanción ya ha sido apelada."),
+                open=True,
+            )
+            self.app.page.update()
+            return
+
+        appeal_field = ft.TextField(label="Motivo de la apelación", multiline=True, width=400)
+
+        def _submit(_):  # noqa: D401
+            text = appeal_field.value.strip()
+            if text:
+                sanction.appeal_text = text
+                sanction.status = SanctionStatusEnum.apelada
+                self.app.db.commit()
+                self._close_dialog()
+                # Notificar al usuario
+                self.app.page.snack_bar = ft.SnackBar(
+                    content=ft.Text("Apelación enviada."),
+                    open=True,
+                )
+                self.app.page.update()
+
+        dlg = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Apelar Sanción"),
+            content=appeal_field,
+            actions=[
+                ft.TextButton("Cancelar", on_click=lambda _e: self._close_dialog()),
+                ft.TextButton("Enviar", on_click=_submit),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+
+        self.app.page.dialog = dlg
+        dlg.open = True
+        self.app.page.update()
 
     # ------------------------------------------------------------------
     # Public API
@@ -191,9 +291,39 @@ class CurrentLoanView(View):
             time_in_str = loan.time_in.strftime("%d/%m/%Y %H:%M") if loan.time_in else "Pendiente"
 
             # --------------------------------------------------
-            # Comprobar si el préstamo tiene incidentes asociados
+            # Comprobar incidentes y estado de sus sanciones
             # --------------------------------------------------
-            has_incident = bool(IncidentService.get_incidents_by_loan(db, loan.id))
+
+            incidents = IncidentService.get_incidents_by_loan(db, loan.id)
+
+            from models import Sanction, SanctionStatusEnum  # import local para evitar ciclos
+
+            has_incident = bool(incidents)
+            # Determinar si todas las sanciones están expiradas
+            all_sanctions_expired = True
+            any_appeal_rejected = False
+
+            for incident in incidents:
+                sanction = (
+                    db.query(Sanction)
+                    .filter(Sanction.incident_id == incident.id)
+                    .first()
+                )
+
+                if sanction is None:
+                    all_sanctions_expired = False
+                    continue
+
+                # Verificar expiración
+                if sanction.status != SanctionStatusEnum.expirada:
+                    all_sanctions_expired = False
+
+                # Identificar apelaciones rechazadas
+                if (
+                    sanction.appeal_text
+                    and sanction.status == SanctionStatusEnum.activa
+                ):
+                    any_appeal_rejected = True
 
             # Duración
             if loan.status == LoanStatusEnum.abierto and loan.time_out:
@@ -227,11 +357,27 @@ class CurrentLoanView(View):
 
             # Indicador de incidente (si existe)
             if has_incident:
+                if all_sanctions_expired:
+                    # Incidentes resueltos → icono de solución verde
+                    icon_symbol = ft.icons.CHECK_CIRCLE
+                    icon_clr = ft.colors.GREEN
+                    tooltip = "Incidente(s) resuelto(s)"
+                elif any_appeal_rejected:
+                    # Apelación rechazada → icono de cancelación naranja
+                    icon_symbol = ft.icons.CANCEL
+                    icon_clr = ft.colors.ORANGE
+                    tooltip = "Apelación rechazada"
+                else:
+                    # Incidentes pendientes o apelación en curso → advertencia roja
+                    icon_symbol = ft.icons.REPORT
+                    icon_clr = ft.colors.RED
+                    tooltip = "Ver incidente(s)"
+
                 row_controls.append(
                     ft.IconButton(
-                        icon=ft.icons.REPORT,
-                        icon_color=ft.colors.RED,
-                        tooltip="Ver incidente(s)",
+                        icon=icon_symbol,
+                        icon_color=icon_clr,
+                        tooltip=tooltip,
                         on_click=lambda _e, ln=loan: self._show_incidents_dialog(ln),
                     )
                 )

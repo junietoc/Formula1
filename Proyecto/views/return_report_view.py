@@ -243,6 +243,7 @@ class ReturnReportView:
     def _view_sanction(self, sanction):
         """Muestra un diálogo con los detalles de la sanción"""
         import datetime as _dt
+        from models import SanctionStatusEnum
 
         def _close(_):
             dialog.open = False
@@ -260,19 +261,86 @@ class ReturnReportView:
         if user_obj is not None:
             user_line = f"{user_obj.full_name} (CC {user_obj.cedula})"
 
+        # --------------------------------------------------
+        # Contenido principal del diálogo
+        # --------------------------------------------------
+
+        content_controls: list[ft.Control] = [
+            ft.Text(f"Usuario: {user_line}"),
+            ft.Text(f"Incidente ID: {sanction.incident_id}"),
+            ft.Text(f"Inicio: {sanction.start_at.strftime('%d/%m/%Y %H:%M') if sanction.start_at else ''}"),
+            ft.Text(f"Fin: {sanction.end_at.strftime('%d/%m/%Y %H:%M') if sanction.end_at else ''}"),
+            ft.Text(f"Estado: {status_text}"),
+        ]
+
+        # Si existe apelación, mostrar razón
+        if sanction.appeal_text:
+            content_controls.append(ft.Divider())
+            content_controls.append(ft.Text("Motivo de la apelación:", weight=ft.FontWeight.BOLD))
+            content_controls.append(ft.Text(sanction.appeal_text))
+
+            # Si existe respuesta, mostrarla
+            if sanction.appeal_response:
+                content_controls.append(ft.Text("Respuesta del operador:", weight=ft.FontWeight.BOLD))
+                content_controls.append(ft.Text(sanction.appeal_response or "(sin respuesta)"))
+
+            # Mostrar resultado de la apelación aun si no hay respuesta
+            if sanction.status.name == "activa":
+                content_controls.append(
+                    ft.Text("Apelación rechazada", color=ft.colors.RED_400)
+                )
+            elif sanction.status.name == "expirada":
+                content_controls.append(
+                    ft.Text("Apelación aceptada", color=ft.colors.GREEN)
+                )
+
+        # --------------------------------------------------
+        # Acciones para administradores cuando la sanción está apelada
+        # --------------------------------------------------
+
+        actions: list[ft.Control] = [ft.TextButton("Cerrar", on_click=_close)]
+
+        current_role = getattr(self.app, "current_user_role", None)
+        if sanction.status.name == "apelada" and current_role == "admin":
+            # Campo opcional para respuesta del operador/admin
+            response_field = ft.TextField(label="Respuesta a la apelación", multiline=True, width=400)
+
+            def _resolve(approve: bool):  # noqa: D401
+                sanction.appeal_response = response_field.value.strip()
+                if approve:
+                    from datetime import datetime, timezone
+                    sanction.status = SanctionStatusEnum.expirada
+                    sanction.end_at = datetime.now(timezone.utc)
+                else:
+                    sanction.status = SanctionStatusEnum.activa
+                self.app.db.commit()
+                _close(None)
+                self.app.page.snack_bar = ft.SnackBar(
+                    content=ft.Text("Apelación resuelta."),
+                    open=True,
+                )
+                self.app.page.update()
+
+            approve_btn = ft.TextButton("Aceptar Apelación", on_click=lambda _e: _resolve(True))
+            reject_btn = ft.TextButton("Rechazar", on_click=lambda _e: _resolve(False))
+
+            actions = [reject_btn, approve_btn, ft.TextButton("Cerrar", on_click=_close)]
+            # Agregar field a contenido
+            content_controls.extend([ft.Divider(), response_field])
+
         dialog = ft.AlertDialog(
             modal=True,
             title=ft.Text("Detalle de Sanción"),
-            content=ft.Column([
-                ft.Text(f"Usuario: {user_line}"),
-                ft.Text(f"Incidente ID: {sanction.incident_id}"),
-                ft.Text(f"Inicio: {sanction.start_at.strftime('%d/%m/%Y %H:%M') if sanction.start_at else ''}"),
-                ft.Text(f"Fin: {sanction.end_at.strftime('%d/%m/%Y %H:%M') if sanction.end_at else ''}"),
-                ft.Text(f"Estado: {status_text}"),
-            ], tight=True, spacing=5),
-            actions=[
-                ft.TextButton("Cerrar", on_click=_close),
-            ],
+            content=ft.Container(
+                content=ft.Column(
+                    content_controls,
+                    tight=False,
+                    spacing=5,
+                    scroll=ft.ScrollMode.ADAPTIVE,
+                ),
+                width=600,
+            ),
+            actions=actions,
             actions_alignment=ft.MainAxisAlignment.END,
         )
 
