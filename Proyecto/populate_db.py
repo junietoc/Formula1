@@ -132,6 +132,7 @@ def populate_users(session: Session) -> None:
                     email=f"usuario{i + 1}@universidad.edu",
                     affiliation=UserAffiliationEnum.estudiante,
                     role=UserRoleEnum.usuario,
+                    stars=3,
                 )
             )
 
