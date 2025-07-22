@@ -41,6 +41,20 @@ class DashboardView(View):
             weight=ft.FontWeight.BOLD,
             color=ft.colors.BLUE_900,
         )
+        
+        # --- Visualización de estrellas de usuario (si está logueado) ---
+        stars_text = None
+        if getattr(self.app, "current_user", None):
+            user_stars = getattr(self.app.current_user, "stars", 3)  # Valor por defecto 3
+            print("DEBUG: El usuario tiene estrellas =", user_stars)
+            stars_icons = "★" * user_stars + "☆" * (5 - user_stars)
+            stars_text = ft.Text(
+                f"Calificación: {stars_icons} ({user_stars}/5)",
+                size=20,
+                color=ft.colors.AMBER_700,
+                weight=ft.FontWeight.BOLD,
+            )
+
 
         # --- Contenido según rol ---
         if role == "admin":
@@ -468,6 +482,7 @@ class DashboardView(View):
             [
                 ft.Container(height=20),
                 ft.Row([welcome_text, ft.Container(expand=True), logout_btn]),
+                stars_text if stars_text else ft.Container(),
                 ft.Container(height=20),
                 body_content,
             ],

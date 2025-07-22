@@ -101,6 +101,7 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     privilege = Column(Enum(PrivilegeTypeEnum))
     favorite_bike_id = Column(UUID(as_uuid=True), ForeignKey("bicycles.id"))
+    stars = Column(SmallInteger, default=3)  # ⭐ AGREGADO AQUÍ
 
     # Relationships
     loans = relationship("Loan", back_populates="user", foreign_keys="Loan.user_id")
